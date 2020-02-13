@@ -1,0 +1,2 @@
+model_checkpoint_path: "recommendergae.ckpt-2500"
+all_model_checkpoint_paths: "recommendergae.ckpt-2500"
