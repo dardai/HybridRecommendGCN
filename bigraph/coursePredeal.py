@@ -3,6 +3,7 @@
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 
+
 def updateCourseDr():
     sql_select_course = '''select user_id,course_id,
         (CASE
@@ -23,7 +24,8 @@ def updateCourseDr():
     if not dbHandle:
         return None
 
-    result = dbHandle.doSql(execType = DataBaseOperateType.SearchMany, sql = sql_select_course)
+    result = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                            sql=sql_select_course)
 
     userCourseList = list()
     for row in result:
@@ -35,5 +37,5 @@ def updateCourseDr():
 
     dbHandle.doSql(DataBaseOperateType.InsertOne, sql_clean_course_dr)
     dbHandle.changeCloseFlag()
-    dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr, insertTuple)
-
+    dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr,
+                   insertTuple)

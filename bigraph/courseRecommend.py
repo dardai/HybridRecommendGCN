@@ -1,19 +1,18 @@
-#周洋涛-2019.9
-#本代码实现了二部图算法，并用批量存储的方法将产生的推荐结果存入到SQL server数据库中的course_model表中
-#import databaseIo
+# 周洋涛-2019.9
+# 本代码实现了二部图算法，并用批量存储的方法将产生的推荐结果存入到SQL server数据库中的course_model表中
+# import databaseIo
 import prettytable as pt
-from decimal import *
-import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve, auc
+from decimal import Decimal
+# from sklearn.metrics import roc_curve, auc
 import pandas as pd
 import numpy as nm
 import random
 
-#引入pyspark的相关包
+# 引入pyspark的相关包
 from pyspark import SparkContext
-from pyspark.mllib.linalg import Matrix
-from pyspark.mllib.linalg.distributed import RowMatrix,DenseMatrix
-from tkinter import  _flatten
+# from pyspark.mllib.linalg import Matrix
+from pyspark.mllib.linalg.distributed import RowMatrix, DenseMatrix
+from tkinter import _flatten
 
 from globalConst import DataBaseOperateType, SetType
 from utils.extends import formatDataByType, makeDic
@@ -21,41 +20,40 @@ from utils.databaseIo import DatabaseIo
 
 # 定义将多条数据存入数据库操作
 
-"""
-输入：由pysaprk中的行矩阵rdd转换成的列表，形如[ DenseMatrix[1,1,1], DenseMatrix[1,1,1], DenseMatrix[1,1,1] ]
-返回：转换成功的列表，形如[ [1,1,1], [1,1,1], [1,1,1] ]
-"""
+
+# 输入：由pysaprk中的行矩阵rdd转换成的列表，形如
+# [ DenseMatrix[1,1,1], DenseMatrix[1,1,1], DenseMatrix[1,1,1] ]
+# 返回：转换成功的列表，形如[ [1,1,1], [1,1,1], [1,1,1] ]
 def transToMatrix(p):
-    return formatDataByType(setType.SetType_Set, p)
+    return formatDataByType(SetType.SetType_Set, p)
 
 
-"""
-输入：要进行矩阵乘法运算的c和d数组，rlength是数组矩阵d的行数，clength是数组矩阵d的列数
-返回：实现矩阵乘法的结果矩阵
-注意：返回的结果矩阵是numpy.matrix类型，但二部图中定义的矩阵都是numpy.array类型，要对函数返回的结果进行类型转换
-"""
-def sparkMultiply(c,d,rlength,clength):
-    #将d数组里的所有行数组合并成一个大数组
+# 输入：要进行矩阵乘法运算的c和d数组，rlength是数组矩阵d的行数，clength是数组矩阵d的列数
+# 返回：实现矩阵乘法的结果矩阵
+# 注意：返回的结果矩阵是numpy.matrix类型，但二部图中定义的矩阵都是numpy.array类型，要对函数返回的结果进行类型转换
+def sparkMultiply(c, d, rlength, clength):
+    # 将d数组里的所有行数组合并成一个大数组
     b2 = _flatten(d.tolist())
-    #设置spark相关参数
-    sc = SparkContext('local','tests')
-    #进行并行化
+    # 设置spark相关参数
+    sc = SparkContext('local', 'tests')
+    # 进行并行化
     t1 = sc.parallelize(c.tolist())
-    #t2 = sc.parallelize(d)
-    #创建行矩阵
+    # t2 = sc.parallelize(d)
+    # 创建行矩阵
     m1 = RowMatrix(t1)
-    #创建密集矩阵，由于pyspark中的矩阵都是按列存储，所以这里参数设置为True使得矩阵创建时与numpy一样按行存储
-    m2 = DenseMatrix(rlength,clength,list(b2),True)
-    #调用pyspark中的矩阵乘法，注意这里的m2一定要对应输入时的d数据矩阵
+    # 创建密集矩阵，由于pyspark中的矩阵都是按列存储，所以这里参数设置为True使得矩阵创建时与numpy一样按行存储
+    m2 = DenseMatrix(rlength, clength, list(b2), True)
+    # 调用pyspark中的矩阵乘法，注意这里的m2一定要对应输入时的d数据矩阵
     mat = m1.multiply(m2)
-    #print(mat.rows.collect())
-    #下面两行代码实现将RDD类型转换成列表类型
+    # print(mat.rows.collect())
+    # 下面两行代码实现将RDD类型转换成列表类型
     k = mat.rows.collect()
     q = transToMatrix(k)
-    #结束并行化
+    # 结束并行化
     sc.stop()
-    #print(q)
+    # print(q)
     return q
+
 
 def getDataFromDB():
     dbHandle = DatabaseIo()
@@ -63,30 +61,38 @@ def getDataFromDB():
         return None
 
     sql_dr = """select *          from course_dr"""
-    sql_course = """select id , system_course_id ,course_name from course_info"""
+    sql_course = "select id , system_course_id ,course_name from course_info"
     sql_user = """select user_id from user_basic_info"""
 
-    result_dr = dbHandle.doSql(execType = DataBaseOperateType.SearchMany, sql = sql_dr)
-    result_course = dbHandle.doSql(execType = DataBaseOperateType.SearchMany, sql = sql_course)
+    result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                               sql=sql_dr)
+    result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                   sql=sql_course)
     dbHandle.changeCloseFlag()
-    result_user = dbHandle.doSql(execType = DataBaseOperateType.SearchMany, sql = sql_user)
+    result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                 sql=sql_user)
 
-    print("len(result_dr) = {}, len(result_user) = {}, len(result_course) = {}".format(len(result_dr), len(result_user), len(result_course)))
+    print("len(result_dr) = {}, len(result_user) = {},\
+          len(result_course) = {}".format(len(result_dr),
+                                          len(result_user),
+                                          len(result_course)))
 
     return result_dr, result_course, result_user
 
-#读取推荐课程的名字
+
+# 读取推荐课程的名字
 def get_keys(value, courseList):
     for row in courseList:
         if row[0] == value:
             return row[2]
 
+
 def dataPreprocessiong():
     result_dr, result_course, result_user = getDataFromDB()
 
-    drList = formatDataByType(SetType_List, result_dr)
-    userList = formatDataByType(SetType_Set, result_user)
-    courseList = formatDataByType(SetType_List, result_course)
+    drList = formatDataByType(SetType.SetType_List, result_dr)
+    userList = formatDataByType(SetType.SetType_Set, result_user)
+    courseList = formatDataByType(SetType.SetType_List, result_course)
 
     dr_length = len(drList)
     course_length = len(courseList)
@@ -103,19 +109,21 @@ def dataPreprocessiong():
         temp_result.append(dr[2] * 5)
         temp_learned.append(dr[0])
         temp_learned.append(dr[1])
-        temp_learned.append(get_keys(dr[1],courseList))
+        temp_learned.append(get_keys(dr[1], courseList))
         result.append(temp_result)
         learned.append(temp_learned)
 
     data = pd.DataFrame(result)
 
-    return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr, dr_length, course_length, user_length, courseList
+    return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr,\
+        dr_length, course_length, user_length, courseList
+
 
 def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
-    all_rated_graph     = nm.zeros([course_length, user_length])    # 创建所有已评价矩阵
-    train_graph         = nm.zeros([course_length, user_length])    # 创建训练图矩阵
-    test_graph          = nm.zeros([course_length, user_length])    # 创建测试图矩阵
-    train_rated_graph   = nm.zeros([course_length, user_length])    # 创建训练集里已评价矩阵
+    all_rated_graph = nm.zeros([course_length, user_length])    # 创建所有已评价矩阵
+    train_graph = nm.zeros([course_length, user_length])    # 创建训练图矩阵
+    test_graph = nm.zeros([course_length, user_length])    # 创建测试图矩阵
+    train_rated_graph = nm.zeros([course_length, user_length])    # 创建训练集里已评价矩阵
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
     for index, row in data.iterrows():
         if ((index + 1) in testIDs):
@@ -125,16 +133,20 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
-            if (int(row[2]) >=  3.0):
+            if (int(row[2]) >= 3.0):
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
 
+
 def doBigraph():
-    data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr, dr_length, course_length, user_length, courseList = dataPreprocessiong()
+    data, learned, course_mdic, course_mdicr, \
+        user_mdic, user_mdicr, dr_length, course_length, \
+        user_length, courseList = dataPreprocessiong()
 
-    all_rated_graph, train_graph, test_graph, train_rated_graph = makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic)
-
+    all_rated_graph, train_graph, test_graph, train_rated_graph = \
+        makeTrainMatrix(data, course_length, user_length,
+                        dr_length, course_mdic)
 
     # 为资源配置矩阵做准备
     kjs = nm.zeros([course_length])
@@ -142,11 +154,11 @@ def doBigraph():
 
     # 求产品的度
     for rid in range(course_length):
-        kjs[rid] = train_graph[rid,:].sum()
+        kjs[rid] = train_graph[rid, :].sum()
 
     # 求用户的度
     for cid in range(user_length):
-        kls[cid] = train_graph[:,cid].sum()
+        kls[cid] = train_graph[:, cid].sum()
 
     # 计算每个用户未选择产品的度
     s = nm.ones(user_length)
@@ -168,18 +180,20 @@ def doBigraph():
     gt = train_graph.T
     temp = nm.zeros([user_length, course_length])
     for i in range(course_length):
-        temp[:,i] = gt[:,i] / kls
-    temp = nm.array(sparkMultiply(train_graph,temp,user_length,course_length))
+        temp[:, i] = gt[:, i] / kls
+    temp = nm.array(sparkMultiply(train_graph, temp,
+                                  user_length, course_length))
     for i in range(course_length):
         weights[i, :] = temp[i, :] / kjs
 
     # 求各个用户的资源分配矩阵
-    locate = nm.array(sparkMultiply(weights,train_rated_graph,course_length,user_length))
-    #将算法产生的推荐结果以列表形式存储
+    locate = nm.array(sparkMultiply(weights, train_rated_graph,
+                                    course_length, user_length))
+    # 将算法产生的推荐结果以列表形式存储
     recommend = []
     for i in range(len(locate)):
         for j in range(len(locate[i])):
-            #过滤掉用户已学习过的课程
+            # 过滤掉用户已学习过的课程
             if all_rated_graph[i][j] != 1:
                 data = []
                 data.append(j+1)
@@ -194,14 +208,17 @@ def doBigraph():
             po = []
             po.append(user_mdicr[i5[0] - 1])
             po.append(course_mdicr[i5[1] - 1])
-            po.append(get_keys(course_mdicr[i5[1] - 1],courseList))
-            po.append(Decimal(i5[2]).quantize(Decimal('0.00000')))   #格式化推荐度的值
+            po.append(get_keys(course_mdicr[i5[1] - 1], courseList))
+            # 格式化推荐度的值
+            po.append(Decimal(i5[2]).quantize(Decimal('0.00000')))
             recommend_result.append(tuple(po))
 
     return locate, recommend_result, learned, user_length, ls, test_graph
 
+
 def storeData(recommend_result):
-    myfile = open("C:/Users/zyt/Desktop/recommender/recommender/recSys/data.txt",mode="w",encoding='utf-8')
+    myfile = open("C:/Users/zyt/Desktop/recommender/recommender/\
+                  recSys/data.txt", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     myfile.write("user_id")
     myfile.write("   ")
@@ -224,16 +241,18 @@ def storeData(recommend_result):
 
     myfile.close()
 
+
 def bigraphMain():
-    locate, recommend_result, learned, user_length, ls, test_graph = doBigraph()
+    locate, recommend_result, learned, \
+        user_length, ls, test_graph = doBigraph()
     storeData(recommend_result)
 
-    result_data = sorted(recommend_result,key = lambda x:x[0] and x[1])
-    result_data = sorted(result_data,key = lambda x:x[3],reverse=True)
+    result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])
+    result_data = sorted(result_data, key=lambda x: x[3], reverse=True)
     # 将产生的推荐结果以id, course_index, recommend_value存入数据库中的course_model表中
-    #insertData(tuple2)
+    # insertData(tuple2)
     # 开始求预测的准确性
-    rs = nm.zeros(user_length)  # ?? 有什么用
+    # rs = nm.zeros(user_length)  # ?? 有什么用
 
     # 求测试集中电影的排名矩阵
 
@@ -254,6 +273,7 @@ def bigraphMain():
 
     return learned, result_data, test_graph
 
+
 def Main():
     learned, result_data, test_graph = bigraphMain()
     while True:
@@ -269,10 +289,10 @@ def Main():
             print("该用户已学习过的课程有：")
             print(ta)
             tb = pt.PrettyTable()
-            tb.field_names = ["User_id", "Course_id", "Course_name", "Recommend_value"]
+            tb.field_names = ["User_id", "Course_id", "Course_name",
+                              "Recommend_value"]
             for row in result_data:
                 if row[0] == int(user_id):
                     tb.add_row(row)
             print("为该用户推荐学习的课程有：")
             print(tb)
-

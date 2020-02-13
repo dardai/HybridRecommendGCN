@@ -13,7 +13,6 @@ import pandas as pd
 
 from data_utils import load_data, map_data, download_dataset
 
-
 def normalize_features(feat):
 
     degree = np.asarray(feat.sum(1)).flatten()
@@ -343,7 +342,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     # download_dataset(fname, files, data_dir)
 
     dtypes = {
-        'u_nodes': np.int64, 'v_nodes': np.int32,
+        'u_nodes': np.int64, 'v_nodes': np.int64,
         'ratings': np.float32}
 
     filename_train = 'u1.base'
@@ -570,4 +569,3 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     return u_features, v_features, rating_mx_train, train_labels, u_train_idx, v_train_idx, \
         val_labels, u_val_idx, v_val_idx, test_labels, u_test_idx, v_test_idx, class_values
-

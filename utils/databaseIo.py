@@ -1,13 +1,18 @@
-import traceback
-import pymysql
+# -*- coding: utf-8 -*-
 
+import pymysql
 from utils.globalConst import DataBaseOperateType, DataBaseInfo
+
 
 class DatabaseIo:
 
     def __init__(self):
         self.closeFlag = False
-        self.db = pymysql.connect(DataBaseInfo["address"], DataBaseInfo["username"], DataBaseInfo["passwd"], DataBaseInfo["basename"])
+        self.db = pymysql.connect(
+            DataBaseInfo["address"],
+            DataBaseInfo["username"],
+            DataBaseInfo["passwd"],
+            DataBaseInfo["basename"])
         if self.db:
             self.cursor = self.db.cursor()
 
@@ -21,7 +26,7 @@ class DatabaseIo:
                 sql: sql 语句
                 *params: 需要对 sql 语句进行格式化的参数
     '''
-    def doSql(self, execType, sql, values = None, *params):
+    def doSql(self, execType, sql, values=None, *params):
         result = None
         sql = formatSql(sql, *params)
 
@@ -33,7 +38,7 @@ class DatabaseIo:
                 result = self.cursor.execute(sql)
                 self.db.commit()
             elif execType == DataBaseOperateType.InsertMany:
-                result = self.cursor.executemany(sql,values)
+                result = self.cursor.executemany(sql, values)
                 self.db.commit()
             elif execType == DataBaseOperateType.SearchOne:
                 self.cursor.execute(sql)
@@ -43,7 +48,7 @@ class DatabaseIo:
                 result = self.cursor.fetchall()
             else:
                 pass
-        except:
+        except Exception:
             print("rollback()  sql = {}".format(sql))
             self.db.rollback()
 
@@ -85,8 +90,6 @@ class DatabaseIo:
     '''
 
 
-
-
 def formatSql(sql, *params):
     sql = ' '.join(sql.split())
     if sql.find('={}') == -1:
@@ -99,4 +102,3 @@ def formatSql(sql, *params):
     sql = sql.format(*params)
 
     return sql
-

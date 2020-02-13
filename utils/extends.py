@@ -2,11 +2,12 @@
 
 from utils.globalConst import SetType
 
+
 def formatDataByType(setType, data):
     result = None
-    if setType == SetType_List:
+    if setType == SetType.SetType_List:
         result = list()
-    elif setType == SetType_Set:
+    elif setType == SetType.SetType_Set:
         result = set()
     else:
         pass
@@ -14,6 +15,7 @@ def formatDataByType(setType, data):
         result.append(list(temp))
 
     return result
+
 
 def makeDic(dataList):
     index = 0
@@ -25,11 +27,10 @@ def makeDic(dataList):
 
     return mdic, mdicr
 
-'''
-    打印集合(广义的集合)
-    其实可以打印所有类型的数据, 用于调试的
-'''
-def printSet(data, depth = 0):
+
+#    打印集合(广义的集合)
+#    其实可以打印所有类型的数据, 用于调试的
+def printSet(data, depth=0):
     tab_length = depth * 4
     begin = '\t'
     end = '\t'
@@ -53,7 +54,8 @@ def printSet(data, depth = 0):
                 printSet(value, depth+1)
                 continue
             print(('\t{} : {},'.format(key, value)).expandtabs(tab_length+4))
-    if isinstance(data, set) or isinstance(data, list) or isinstance(data, tuple):
+    if isinstance(data, set) or isinstance(data, list) or \
+            isinstance(data, tuple):
         for item in data:
             if isSet(item):
                 printSet(item, depth+1)
@@ -61,10 +63,13 @@ def printSet(data, depth = 0):
             print('\t{},'.format(item).expandtabs(tab_length+4))
     print(end)
 
+
 def isSet(data):
-    if isinstance(data, set) or isinstance(data, dict) or isinstance(data, list) or isinstance(data, tuple):
+    if isinstance(data, set) or isinstance(data, dict) or \
+            isinstance(data, list) or isinstance(data, tuple):
         return True
     return False
+
 
 # 获取搜索结果中指定字段的数据, 并将结果按列表返回
 def getAppointedData(data, aList):
@@ -81,6 +86,7 @@ def getAppointedData(data, aList):
             filterData.append(temp_dict)
 
     return filterData
+
 
 def getAppointedDataAndScore(data, aList):
     filterData = []
@@ -99,5 +105,3 @@ def getAppointedDataAndScore(data, aList):
         filterData.append(temp_dict)
 
     return filterData
-
-
