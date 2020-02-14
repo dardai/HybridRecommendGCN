@@ -2,11 +2,11 @@
 
 import jieba
 
-from utils.extends import printSet
 from searchEngine.resort import getRec
 
 WordsFrenquencyDict = {}
 StopWord = []
+
 
 def wordCut(id):
     recList = getRec(id)
@@ -15,13 +15,16 @@ def wordCut(id):
         tempList = jieba.lcut(title)
         tempList = cleanStopWord(tempList)
         for word in tempList:
-            if word in WordsFrenquencyDict.keys():  # 使用in判断word是否存在于tempDict的键中
+            # 使用in判断word是否存在于tempDict的键中
+            if word in WordsFrenquencyDict.keys():
                 WordsFrenquencyDict[word] += 1
             else:
                 WordsFrenquencyDict[word] = 1
 
+
 def cleanWordsFrenquencyDict():
-    WordsFrenquencyDict = []
+    WordsFrenquencyDict.clear()
+
 
 def cleanStopWord(wordList):
     if not wordList or len(wordList) == 0:
@@ -34,8 +37,9 @@ def cleanStopWord(wordList):
 
     return newWordList
 
+
 def loadStopWord():
-    stopWordFile = open("stopWord.txt","r", encoding="utf-8")   #设置文件对象
+    stopWordFile = open("stopWord.txt", "r", encoding="utf-8")
 
     if not stopWordFile:
         return False
@@ -48,4 +52,3 @@ def loadStopWord():
         StopWord.append(word)
 
     return True
-
