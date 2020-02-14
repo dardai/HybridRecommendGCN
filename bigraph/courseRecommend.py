@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # 周洋涛-2019.9
 # 本代码实现了二部图算法，并用批量存储的方法将产生的推荐结果存入到SQL server数据库中的course_model表中
 # import databaseIo
