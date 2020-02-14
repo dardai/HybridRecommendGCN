@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
-import pymysql
-from utils.globalConst import DataBaseOperateType, DataBaseInfo
+import MySQLdb
+from globalConst import DataBaseOperateType, DataBaseInfo
 
 
 class DatabaseIo:
 
     def __init__(self):
         self.closeFlag = False
-        self.db = pymysql.connect(
+        self.db = MySQLdb.connect(
             DataBaseInfo["address"],
             DataBaseInfo["username"],
             DataBaseInfo["passwd"],
