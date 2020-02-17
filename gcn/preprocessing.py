@@ -10,7 +10,6 @@ import os
 import h5py
 import pandas as pd
 
-
 from data_utils import load_data, map_data, download_dataset
 
 def normalize_features(feat):
@@ -330,8 +329,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     For each split computes 1-of-num_classes labels. Also computes training
     adjacency matrix. Assumes flattening happens everywhere in row-major fashion.
     """
-
-    sep = '/t'
+    sep = ','
 
     # Check if files exist and download otherwise
     files = ['/u1.base', '/u1.test', '/u.item', '/u.user']
@@ -345,8 +343,8 @@ def load_official_trainvaltest_split(dataset, testing=False):
         'u_nodes': np.int64, 'v_nodes': np.int64,
         'ratings': np.float32}
 
-    filename_train = 'u1.base'
-    filename_test = 'u1.test'
+    filename_train = 'mat.csv'
+    filename_test = 'mat.csv'
 
     data_train = pd.read_csv(
         filename_train, sep=sep, header=None,
@@ -355,6 +353,34 @@ def load_official_trainvaltest_split(dataset, testing=False):
     data_test = pd.read_csv(
         filename_test, sep=sep, header=None,
         names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
+
+    '''
+    sep = '/t'
+
+    # Check if files exist and download otherwise
+    # files = ['/u1.base', '/u1.test', '/u.item', '/u.user']
+    # fname = dataset
+    # data_dir = 'data/' + fname
+
+    # here we make this download operation unavailable, use local files instead
+    # download_dataset(fname, files, data_dir)
+
+    dtypes = {
+        'u_nodes': np.int64, 'v_nodes': np.int32,
+        'ratings': np.float32}
+
+    filename_train = 'u1.base'
+    filename_test = 'u1.test'
+
+    data_train = pd.read_csv(
+        filepath_or_buffer=filename_train, sep=sep, header=None,
+        names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
+
+    data_test = pd.read_csv(
+        filename_test, sep=sep, header=None,
+        names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes,
+        engine='python')
+    '''
 
     data_array_train = data_train.as_matrix().tolist()
     data_array_train = np.array(data_array_train)
