@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from utils.globalConst import SetType
+from globalConst import SetType
 
 
 def formatDataByType(setType, data):
