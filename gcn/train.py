@@ -8,18 +8,21 @@ from __future__ import print_function
 import argparse
 import datetime
 import time
-
+import csv
 import tensorflow as tf
 import numpy as np
 import scipy.sparse as sp
 import sys
 import json
 
+from numpy import *
+import numpy as np
+
 from preprocessing import create_trainvaltest_split, \
     sparse_to_tuple, preprocess_user_item_features, globally_normalize_bipartite_adjacency, \
     load_data_monti, load_official_trainvaltest_split, normalize_features
 from model import RecommenderGAE, RecommenderSideInfoGAE
-from utils import construct_feed_dict
+from utils import construct_feed_dict, print_predict_d, write_csv
 
 # Set random seed
 # seed = 123 # use only for unit testing
@@ -36,7 +39,7 @@ ap.add_argument("-d", "--dataset", type=str, default="ml_100k",
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
                 help="Learning rate")
 
-ap.add_argument("-e", "--epochs", type=int, default=2500,
+ap.add_argument("-e", "--epochs", type=int, default=30,
                 help="Number training epochs")
 
 ap.add_argument("-hi", "--hidden", type=int, nargs=2, default=[500, 75],
@@ -369,10 +372,12 @@ train_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_fe
                                       train_labels, train_u_indices, train_v_indices, class_values, DO,
                                       train_u_features_side, train_v_features_side)
 # No dropout for validation and test runs
+
 val_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero,
                                     v_features_nonzero, val_support, val_support_t,
                                     val_labels, val_u_indices, val_v_indices, class_values, 0.,
                                     val_u_features_side, val_v_features_side)
+
 
 test_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero,
                                      v_features_nonzero, test_support, test_support_t,
@@ -400,7 +405,6 @@ wait = 0
 
 print('Training...')
 
-outs = None
 for epoch in range(NB_EPOCH):
 
     t = time.time()
@@ -408,19 +412,23 @@ for epoch in range(NB_EPOCH):
     # Run single weight update
     # outs = sess.run([model.opt_op, model.loss, model.rmse], feed_dict=train_feed_dict)
     # with exponential moving averages
-    outs = sess.run([model.outputs, model.loss, model.rmse], feed_dict=train_feed_dict)
-    print(outs[0])
+    outs = sess.run([model.training_op, model.loss, model.rmse], feed_dict=train_feed_dict)
 
     train_avg_loss = outs[1]
     train_rmse = outs[2]
 
     val_avg_loss, val_rmse = sess.run([model.loss, model.rmse], feed_dict=val_feed_dict)
-
-    print("------------------")
-    print(model.outputs)
+    outs = sess.run([model.probs, model.loss, model.rmse], feed_dict=val_feed_dict)
+    '''
+    print("____________________")
     print(outs[0])
-    print("------------------")
+    print("____________________")
+    print(len(outs[0]))
+    print("____________________")
 
+    f = open('result.csv', 'w')
+    content = csv.writer(f)
+'''
     if VERBOSE:
         print("[*] Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_avg_loss),
               "train_rmse=", "{:.5f}".format(train_rmse),
@@ -461,19 +469,27 @@ for epoch in range(NB_EPOCH):
         saver = tf.train.Saver()
         saver.restore(sess, save_path)
 
-print("************************")
-outs = sess.run([model.pred_y, model.loss, model.rmse], feed_dict=val_feed_dict)
-print(outs[0])
-print("************************")
 
 # store model including exponential moving averages
 saver = tf.train.Saver()
 save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.global_step)
-print('+++++++++++++++++++++')
-print(model.outputs.__dict__)
-tf.Print(model.outputs, ['Vector'])
-print(type(model.outputs))
-print('+++++++++++++++++++++')
+
+print("************************")
+outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=val_feed_dict)
+# print(outs[0])
+user_n, item_n = sess.run([model.u_indices, model.v_indices],feed_dict=val_feed_dict)
+val_input,user_n, item_n = sess.run([model.inputs,model.u_indices, model.v_indices],feed_dict=val_feed_dict)
+# result = reshape(outs[0],(num_users, -1))
+f = open('user_n','w')
+content=csv.writer(f)
+content.writerow(user_n)
+f = open('item_n','w')
+content=csv.writer(f)
+content.writerow(item_n)
+f = open('val_input','w')
+content=csv.writer(f)
+content.writerow(val_input)
+write_csv(outs[0], val_u_indices, val_v_indices)
 
 
 
@@ -501,7 +517,6 @@ else:
     variables_to_restore = model.variable_averages.variables_to_restore()
     saver = tf.train.Saver(variables_to_restore)
     saver.restore(sess, save_path)
-    print(variables_to_restore)
 
     val_avg_loss, val_rmse = sess.run([model.loss, model.rmse], feed_dict=val_feed_dict)
     print('polyak val loss = ', val_avg_loss)
@@ -517,5 +532,5 @@ print('global seed = ', seed)
 results = vars(ap.parse_args()).copy()
 results.update({'best_val_score': float(best_val_score), 'best_epoch': best_epoch})
 print(json.dumps(results))
-sess.close()
 
+sess.close()
