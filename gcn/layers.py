@@ -463,4 +463,3 @@ class BilinearMixture(Layer):
             if self.logging:
                 tf.summary.histogram(self.name + '/outputs', outputs)
             return outputs
-

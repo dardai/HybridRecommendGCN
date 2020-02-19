@@ -35,7 +35,7 @@ class Model(object):
         self.inputs = None
         self.outputs = None
         self.probs = None
-        self.pred_y = None
+        self.pred = None
 
         self.loss = 0
         self.accuracy = 0
@@ -146,7 +146,7 @@ class RecommenderGAE(Model):
         self.accuracy = softmax_accuracy(self.outputs, self.labels)
 
     def _rmse(self):
-        self.rmse, self.probs, self.pred_y = expected_rmse(self.outputs, self.labels, self.class_values)
+        self.rmse, self.probs, self.pred = expected_rmse(self.outputs, self.labels, self.class_values)
 
         tf.summary.scalar('rmse_score', self.rmse)
 
@@ -270,7 +270,7 @@ class RecommenderSideInfoGAE(Model):
         self.accuracy = softmax_accuracy(self.outputs, self.labels)
 
     def _rmse(self):
-        self.rmse, self.probs, self.pred_y = expected_rmse(self.outputs, self.labels, self.class_values)
+        self.rmse, self.probs, self.pred = expected_rmse(self.outputs, self.labels, self.class_values)
 
         tf.summary.scalar('rmse_score', self.rmse)
 
@@ -383,4 +383,3 @@ class RecommenderSideInfoGAE(Model):
         self._accuracy()
 
         self.opt_op = self.optimizer.minimize(self.loss, global_step=self.global_step)
-

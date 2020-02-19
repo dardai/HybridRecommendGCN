@@ -2,6 +2,7 @@
 
 import tensorflow as tf
 
+
 def softmax_accuracy(preds, labels):
     """
     Accuracy for multiclass model.
@@ -13,6 +14,42 @@ def softmax_accuracy(preds, labels):
     accuracy_all = tf.cast(correct_prediction, tf.float32)
     return tf.reduce_mean(accuracy_all)
 
+def printSet(data, depth = 0):
+    tab_length = depth * 4
+    begin = '\t'
+    end = '\t'
+    if isinstance(data, set) or isinstance(data, dict):
+        begin = begin.__add__('{').expandtabs(tab_length)
+        end = end.__add__('},').expandtabs(tab_length)
+    elif isinstance(data, list):
+        begin = begin.__add__('[').expandtabs(tab_length)
+        end = end.__add__('],').expandtabs(tab_length)
+    elif isinstance(data, tuple):
+        begin = begin.__add__('(').expandtabs(tab_length)
+        end = end.__add__('),').expandtabs(tab_length)
+    else:
+        print('{},'.format(data))
+        return
+
+    print(begin)
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if isSet(value):
+                printSet(value, depth+1)
+                continue
+            print(('\t{} : {},'.format(key, value)).expandtabs(tab_length+4))
+    if isinstance(data, set) or isinstance(data, list) or isinstance(data, tuple):
+        for item in data:
+            if isSet(item):
+                printSet(item, depth+1)
+                continue
+            print('\t{},'.format(item).expandtabs(tab_length+4))
+    print(end)
+
+def isSet(data):
+    if isinstance(data, set) or isinstance(data, dict) or isinstance(data, list) or isinstance(data, tuple):
+        return True
+    return False
 
 def expected_rmse(logits, labels, class_values=None):
     """
@@ -26,10 +63,10 @@ def expected_rmse(logits, labels, class_values=None):
     """
 
     probs = tf.nn.softmax(logits)
-    print("------------1---------------------")
-    print(type(probs))
-    print(probs)
-    print("------------1---------------------")
+    print("--------------------------")
+    printSet(probs)
+    print("--------------------------")
+
     if class_values is None:
         scores = tf.to_float(tf.range(start=0, limit=logits.get_shape()[1]) + 1)
         y = tf.to_float(labels) + 1.  # assumes class values are 1, ..., num_classes
@@ -38,6 +75,7 @@ def expected_rmse(logits, labels, class_values=None):
         y = tf.gather(class_values, labels)
 
     pred_y = tf.reduce_sum(probs * scores, 1)
+
 
     diff = tf.subtract(y, pred_y)
     exp_rmse = tf.square(diff)
@@ -76,4 +114,3 @@ def softmax_cross_entropy(outputs, labels):
 
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=outputs, labels=labels)
     return tf.reduce_mean(loss)
-
