@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import division
 from __future__ import print_function
+import csv
 
 
 def construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero, v_features_nonzero,
@@ -29,3 +32,19 @@ def construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero
         feed_dict.update({placeholders['v_features_side']: v_features_side})
 
     return feed_dict
+
+
+def print_predict_d(labels, u_indices, v_indices):
+    print("-----------print_predict_d--------------")
+    for user, vedio, score in zip(u_indices, v_indices, labels):
+        print("{}   {}  {}".format(user, vedio, score))
+    print("-----------print_predict_d--------------")
+
+
+def write_csv(labels, u_indices, v_indices):
+    print("-----------write_csv--------------")
+    f = open('result.csv', 'wb+')
+    content = csv.writer(f)
+    for user, vedio, score in zip(u_indices, v_indices, labels):
+        content.writerow([user, vedio, score])
+    print("-----------write_csv--------------")
