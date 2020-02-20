@@ -9,12 +9,13 @@ from decimal import Decimal
 import pandas as pd
 import numpy as nm
 import random
-
+import io
 # 引入pyspark的相关包
 from pyspark import SparkContext
 # from pyspark.mllib.linalg import Matrix
 from pyspark.mllib.linalg.distributed import RowMatrix, DenseMatrix
-from tkinter import _flatten
+#from tkinter import _flatten
+from Tkinter import _flatten
 
 from globalConst import DataBaseOperateType, SetType
 from utils.extends import formatDataByType, makeDic
@@ -53,7 +54,7 @@ def sparkMultiply(c, d, rlength, clength):
     q = transToMatrix(k)
     # 结束并行化
     sc.stop()
-    # print(q)
+    print(q)
     return q
 
 
@@ -183,14 +184,17 @@ def doBigraph():
     temp = nm.zeros([user_length, course_length])
     for i in range(course_length):
         temp[:, i] = gt[:, i] / kls
-    temp = nm.array(sparkMultiply(train_graph, temp,
-                                  user_length, course_length))
+
+    #temp = nm.array(sparkMultiply(train_graph, temp,
+    #                              user_length, course_length))
+    temp = nm.matmul(train_graph,temp)
     for i in range(course_length):
         weights[i, :] = temp[i, :] / kjs
 
     # 求各个用户的资源分配矩阵
-    locate = nm.array(sparkMultiply(weights, train_rated_graph,
-                                    course_length, user_length))
+    locate = nm.matmul(weights,train_rated_graph)
+    #locate = nm.array(sparkMultiply(weights, train_rated_graph,
+    #                                course_length, user_length))
     # 将算法产生的推荐结果以列表形式存储
     recommend = []
     for i in range(len(locate)):
@@ -203,6 +207,8 @@ def doBigraph():
                 data.append(locate[i][j])
                 temp_data = list(data)
                 recommend.append(temp_data)
+
+
 
     recommend_result = []
     for i5 in recommend:
@@ -219,8 +225,9 @@ def doBigraph():
 
 
 def storeData(recommend_result):
+
     myfile = open("C:/Users/zyt/Desktop/recommender/recommender/\
-                  recSys/data.txt", mode="w", encoding='utf-8')
+                  data.txt", mode="w",encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     myfile.write("user_id")
     myfile.write("   ")
