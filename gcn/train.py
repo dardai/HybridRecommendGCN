@@ -16,13 +16,12 @@ import sys
 import json
 
 from numpy import *
-import numpy as np
 
-from preprocessing import create_trainvaltest_split, \
-    sparse_to_tuple, preprocess_user_item_features, globally_normalize_bipartite_adjacency, \
+from preprocessing import create_trainvaltest_split, sparse_to_tuple, \
+    preprocess_user_item_features, globally_normalize_bipartite_adjacency, \
     load_data_monti, load_official_trainvaltest_split, normalize_features
 from model import RecommenderGAE, RecommenderSideInfoGAE
-from utils import construct_feed_dict, print_predict_d, write_csv
+from utils import construct_feed_dict, write_csv, getReversalDict, getRealId
 
 # Set random seed
 # seed = 123 # use only for unit testing
@@ -156,9 +155,10 @@ if DATASET == 'flixster' or DATASET == 'douban' or DATASET == 'yahoo_music':
 
 elif DATASET == 'ml_100k':
     print("Using official MovieLens dataset split u1.base/u1.test with 20% validation set size...")
-    u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices, \
-        val_labels, val_u_indices, val_v_indices, test_labels, \
-        test_u_indices, test_v_indices, class_values = load_official_trainvaltest_split(DATASET, TESTING)
+    u_features, v_features, adj_train, train_labels, train_u_indices, \
+        train_v_indices, val_labels, val_u_indices, val_v_indices, \
+        test_labels, test_u_indices, test_v_indices, class_values, \
+        u_dict, v_dict = load_official_trainvaltest_split(DATASET, TESTING)
 else:
     print("Using random dataset split ...")
     u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices, \
@@ -477,20 +477,22 @@ save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.globa
 print("************************")
 outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=val_feed_dict)
 # print(outs[0])
-user_n, item_n = sess.run([model.u_indices, model.v_indices],feed_dict=val_feed_dict)
-val_input,user_n, item_n = sess.run([model.inputs,model.u_indices, model.v_indices],feed_dict=val_feed_dict)
+user_n, item_n = sess.run([model.u_indices, model.v_indices],
+                          feed_dict=val_feed_dict)
+val_input, user_n, item_n = sess.run(
+    [model.inputs, model.u_indices, model.v_indices],
+    feed_dict=val_feed_dict)
 # result = reshape(outs[0],(num_users, -1))
-f = open('user_n','w')
-content=csv.writer(f)
-content.writerow(user_n)
-f = open('item_n','w')
-content=csv.writer(f)
-content.writerow(item_n)
-f = open('val_input','w')
-content=csv.writer(f)
+f = open('user_n', 'w')
+content = csv.writer(f)
+content.writerow(getRealId(getReversalDict(u_dict), user_n))
+f = open('item_n', 'w')
+content = csv.writer(f)
+content.writerow(getRealId(getReversalDict(v_dict), item_n))
+f = open('val_input', 'w')
+content = csv.writer(f)
 content.writerow(val_input)
 write_csv(outs[0], val_u_indices, val_v_indices)
-
 
 
 if VERBOSE:

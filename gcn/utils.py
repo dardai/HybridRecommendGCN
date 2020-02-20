@@ -48,3 +48,24 @@ def write_csv(labels, u_indices, v_indices):
     for user, vedio, score in zip(u_indices, v_indices, labels):
         content.writerow([user, vedio, score])
     print("-----------write_csv--------------")
+
+
+def getReversalDict(idDict):
+    newDict = dict()
+
+    for index, realId in idDict.items():
+        newDict[realId] = index
+
+    return newDict
+
+
+def getRealId(idDict, idList):
+    newIdList = list()
+
+    for index in idList:
+        if idDict[index]:
+            newIdList.append(idDict[index])
+        else:
+            print("index  not   exit")
+
+    return newIdList
