@@ -9,13 +9,14 @@ from decimal import Decimal
 import pandas as pd
 import numpy as nm
 import random
-import io
+import codecs
+# import io
 # 引入pyspark的相关包
-from pyspark import SparkContext
+# from pyspark import SparkContext
 # from pyspark.mllib.linalg import Matrix
-from pyspark.mllib.linalg.distributed import RowMatrix, DenseMatrix
-#from tkinter import _flatten
-from Tkinter import _flatten
+# from pyspark.mllib.linalg.distributed import RowMatrix, DenseMatrix
+# from tkinter import _flatten
+# from Tkinter import _flatten
 
 from globalConst import DataBaseOperateType, SetType
 from utils.extends import formatDataByType, makeDic
@@ -34,6 +35,7 @@ def transToMatrix(p):
 # 输入：要进行矩阵乘法运算的c和d数组，rlength是数组矩阵d的行数，clength是数组矩阵d的列数
 # 返回：实现矩阵乘法的结果矩阵
 # 注意：返回的结果矩阵是numpy.matrix类型，但二部图中定义的矩阵都是numpy.array类型，要对函数返回的结果进行类型转换
+'''
 def sparkMultiply(c, d, rlength, clength):
     # 将d数组里的所有行数组合并成一个大数组
     b2 = _flatten(d.tolist())
@@ -56,6 +58,7 @@ def sparkMultiply(c, d, rlength, clength):
     sc.stop()
     print(q)
     return q
+'''
 
 
 def getDataFromDB():
@@ -185,15 +188,15 @@ def doBigraph():
     for i in range(course_length):
         temp[:, i] = gt[:, i] / kls
 
-    #temp = nm.array(sparkMultiply(train_graph, temp,
+    # temp = nm.array(sparkMultiply(train_graph, temp,
     #                              user_length, course_length))
-    temp = nm.matmul(train_graph,temp)
+    temp = nm.matmul(train_graph, temp)
     for i in range(course_length):
         weights[i, :] = temp[i, :] / kjs
 
     # 求各个用户的资源分配矩阵
-    locate = nm.matmul(weights,train_rated_graph)
-    #locate = nm.array(sparkMultiply(weights, train_rated_graph,
+    locate = nm.matmul(weights, train_rated_graph)
+    # locate = nm.array(sparkMultiply(weights, train_rated_graph,
     #                                course_length, user_length))
     # 将算法产生的推荐结果以列表形式存储
     recommend = []
@@ -207,8 +210,6 @@ def doBigraph():
                 data.append(locate[i][j])
                 temp_data = list(data)
                 recommend.append(temp_data)
-
-
 
     recommend_result = []
     for i5 in recommend:
@@ -226,8 +227,7 @@ def doBigraph():
 
 def storeData(recommend_result):
 
-    myfile = open("C:/Users/zyt/Desktop/recommender/recommender/\
-                  data.txt", mode="w",encoding='utf-8')
+    myfile = codecs.open("data.txt", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     myfile.write("user_id")
     myfile.write("   ")
@@ -243,7 +243,7 @@ def storeData(recommend_result):
         myfile.write(" ")
         myfile.write(str(row[1]))
         myfile.write(" ")
-        myfile.write(str(row[2]))
+        myfile.write(row[2])
         myfile.write(" ")
         myfile.write(str(row[3]))
         myfile.write("\n")

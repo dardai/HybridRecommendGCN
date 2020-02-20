@@ -12,7 +12,8 @@ class DatabaseIo:
             DataBaseInfo["address"],
             DataBaseInfo["username"],
             DataBaseInfo["passwd"],
-            DataBaseInfo["basename"])
+            DataBaseInfo["basename"],
+            charset="utf8")
         if self.db:
             self.cursor = self.db.cursor()
 
