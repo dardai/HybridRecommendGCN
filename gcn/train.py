@@ -405,8 +405,7 @@ wait = 0
 
 print('Training...')
 
-# for epoch in range(NB_EPOCH):
-for epoch in range(10):
+for epoch in range(NB_EPOCH):
 
     t = time.time()
 
