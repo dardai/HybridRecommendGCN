@@ -13,9 +13,9 @@ def formatDataByType(setType, data):
         pass
     for temp in data:
         if isinstance(result, list):
-            result.append(list(temp))
+            result.append(temp)
         if isinstance(result, set):
-            result.add(list(temp))
+            result.add(temp)
 
     return result
 
