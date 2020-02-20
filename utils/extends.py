@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from utils.globalConst import SetType
+from globalConst import SetType
 
 
 def formatDataByType(setType, data):
@@ -12,7 +12,10 @@ def formatDataByType(setType, data):
     else:
         pass
     for temp in data:
-        result.append(list(temp))
+        if isinstance(result, list):
+            result.append(list(temp))
+        if isinstance(result, set):
+            result.add(list(temp))
 
     return result
 
