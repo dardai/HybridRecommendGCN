@@ -259,7 +259,8 @@ def load_data_monti(dataset, testing=False):
 
     num_train = np.where(Otraining)[0].shape[0]
     num_test = np.where(Otest)[0].shape[0]
-    num_val = int(np.ceil(num_train * 0.2))
+    # num_val = int(np.ceil(num_train * 0.2))
+    num_val = int(np.ceil(num_train * 0))
     num_train = num_train - num_val
 
     pairs_nonzero_train = np.array([[u, v] for u, v in zip(np.where(Otraining)[0], np.where(Otraining)[1])])
@@ -421,7 +422,8 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     num_train = data_array_train.shape[0]
     num_test = data_array_test.shape[0]
-    num_val = int(np.ceil(num_train * 0.2))
+    # num_val = int(np.ceil(num_train * 0.2))
+    num_val = int(np.ceil(num_train * 0))
     num_train = num_train - num_val
 
     pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
