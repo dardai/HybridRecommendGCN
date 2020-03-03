@@ -22,6 +22,7 @@ from globalConst import DataBaseOperateType, SetType
 from utils.extends import formatDataByType, makeDic
 from utils.databaseIo import DatabaseIo
 
+
 # 定义将多条数据存入数据库操作
 
 
@@ -121,15 +122,15 @@ def dataPreprocessiong():
 
     data = pd.DataFrame(result)
 
-    return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr,\
-        dr_length, course_length, user_length, courseList
+    return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr, \
+           dr_length, course_length, user_length, courseList
 
 
 def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
-    all_rated_graph = nm.zeros([course_length, user_length])    # 创建所有已评价矩阵
-    train_graph = nm.zeros([course_length, user_length])    # 创建训练图矩阵
-    test_graph = nm.zeros([course_length, user_length])    # 创建测试图矩阵
-    train_rated_graph = nm.zeros([course_length, user_length])    # 创建训练集里已评价矩阵
+    all_rated_graph = nm.zeros([course_length, user_length])  # 创建所有已评价矩阵
+    train_graph = nm.zeros([course_length, user_length])  # 创建训练图矩阵
+    test_graph = nm.zeros([course_length, user_length])  # 创建测试图矩阵
+    train_rated_graph = nm.zeros([course_length, user_length])  # 创建训练集里已评价矩阵
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
     for index, row in data.iterrows():
         if ((index + 1) in testIDs):
@@ -147,8 +148,8 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
 
 def doBigraph():
     data, learned, course_mdic, course_mdicr, \
-        user_mdic, user_mdicr, dr_length, course_length, \
-        user_length, courseList = dataPreprocessiong()
+    user_mdic, user_mdicr, dr_length, course_length, \
+    user_length, courseList = dataPreprocessiong()
 
     all_rated_graph, train_graph, test_graph, train_rated_graph = \
         makeTrainMatrix(data, course_length, user_length,
@@ -202,14 +203,11 @@ def doBigraph():
     recommend = []
     for i in range(len(locate)):
         for j in range(len(locate[i])):
-            # 过滤掉用户已学习过的课程
-            if all_rated_graph[i][j] != 1:
-                data = []
-                data.append(j+1)
-                data.append(i+1)
-                data.append(locate[i][j])
-                temp_data = list(data)
-                recommend.append(temp_data)
+            # 不能过滤用户已学习过的课程，注释掉这个条件
+            # if all_rated_graph[i][j] != 1:
+            data = [j + 1, i + 1, locate[i][j]]
+            temp_data = list(data)
+            recommend.append(temp_data)
 
     recommend_result = []
     for i5 in recommend:
@@ -226,7 +224,6 @@ def doBigraph():
 
 
 def storeData(recommend_result):
-
     myfile = codecs.open("data.txt", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     myfile.write("user_id")
@@ -253,7 +250,7 @@ def storeData(recommend_result):
 
 def bigraphMain():
     locate, recommend_result, learned, \
-        user_length, ls, test_graph = doBigraph()
+    user_length, ls, test_graph = doBigraph()
     storeData(recommend_result)
 
     result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])

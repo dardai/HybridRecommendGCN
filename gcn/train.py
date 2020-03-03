@@ -475,6 +475,7 @@ for epoch in range(NB_EPOCH):
 saver = tf.train.Saver()
 save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.global_step)
 
+
 print("************************")
 outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=val_feed_dict)
 # print(outs[0])
