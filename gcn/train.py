@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """ Experiment runner for the model with knowledge graph attached to interaction data """
+# test by daijie
 
 from __future__ import division
 from __future__ import print_function
@@ -473,6 +474,7 @@ for epoch in range(NB_EPOCH):
 # store model including exponential moving averages
 saver = tf.train.Saver()
 save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.global_step)
+
 
 print("************************")
 outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=val_feed_dict)
