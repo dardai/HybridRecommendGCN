@@ -340,7 +340,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     # download_dataset(fname, files, data_dir)
 
     dtypes = {
-        'u_nodes': np.int64, 'v_nodes': np.int64,
+        'u_nodes': np.uint64, 'v_nodes': np.uint64,
         'ratings': np.float32}
 
     filename_train = 'mat.csv'
