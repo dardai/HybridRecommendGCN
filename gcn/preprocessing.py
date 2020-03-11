@@ -9,6 +9,7 @@ import cPickle as pkl
 import os
 import h5py
 import pandas as pd
+import csv
 
 from data_utils import load_data, map_data, download_dataset
 
@@ -347,10 +348,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     # filename_test = 'mat.csv'
 
     # 数据输入GCN前进行一次转换,手动构造dataframe
-    import csv
-    u_nodes = []
-    v_nodes = []
-    ratings = []
+    u_nodes, v_nodes, ratings = [], [], []
     i = 0
     with open('mat.csv', 'r') as f:
         reader = csv.reader(f)
@@ -361,24 +359,22 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     uSuperDict = {r: i for i, r in enumerate(list(set(u_nodes)))}
     vSuperDict = {r: i for i, r in enumerate(list(set(v_nodes)))}
+    print(uSuperDict)
 
-    v_nodes = []
-    u_nodes = []
-    with open('mat.csv', 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            u_nodes.append(uSuperDict[int(row[0])])
-            v_nodes.append(vSuperDict[int(row[1])])
+    new_u_nodes, new_v_nodes = [], []
+    for uid in u_nodes:
+        new_u_nodes.append(uSuperDict[uid])
+    for vid in v_nodes:
+        new_v_nodes.append(vSuperDict[vid])
+    u_nodes, v_nodes = new_u_nodes, new_v_nodes
 
-    dict = {
+    data_dict = {
         'u_nodes': np.int64(u_nodes),
         'v_nodes': np.int64(v_nodes),
         'ratings': np.float32(ratings)
     }
-    data_train = pd.DataFrame(data=dict)
-    data_test = pd.DataFrame(data=dict)
-
-
+    data_train = pd.DataFrame(data=data_dict)
+    data_test = pd.DataFrame(data=data_dict)
 
     # data_train = pd.read_csv(
     #     filename_train, sep=sep, header=None,
@@ -629,4 +625,4 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     return u_features, v_features, rating_mx_train, train_labels, \
         u_train_idx, v_train_idx, val_labels, u_val_idx, v_val_idx, \
-        test_labels, u_test_idx, v_test_idx, class_values, u_dict, v_dict
+        test_labels, u_test_idx, v_test_idx, class_values, uSuperDict, vSuperDict
