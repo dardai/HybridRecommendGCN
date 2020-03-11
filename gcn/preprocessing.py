@@ -340,19 +340,53 @@ def load_official_trainvaltest_split(dataset, testing=False):
     # download_dataset(fname, files, data_dir)
 
     dtypes = {
-        'u_nodes': np.uint64, 'v_nodes': np.uint64,
+        'u_nodes': np.int64, 'v_nodes': np.int64,
         'ratings': np.float32}
 
-    filename_train = 'mat.csv'
-    filename_test = 'mat.csv'
+    # filename_train = 'mat.csv'
+    # filename_test = 'mat.csv'
 
-    data_train = pd.read_csv(
-        filename_train, sep=sep, header=None,
-        names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
+    # 数据输入GCN前进行一次转换,手动构造dataframe
+    import csv
+    u_nodes = []
+    v_nodes = []
+    ratings = []
+    i = 0
+    with open('mat.csv', 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            u_nodes.append(int(row[0]))
+            v_nodes.append(int(row[1]))
+            ratings.append(int(row[2]))
 
-    data_test = pd.read_csv(
-        filename_test, sep=sep, header=None,
-        names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
+    uSuperDict = {r: i for i, r in enumerate(list(set(u_nodes)))}
+    vSuperDict = {r: i for i, r in enumerate(list(set(v_nodes)))}
+
+    v_nodes = []
+    u_nodes = []
+    with open('mat.csv', 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            u_nodes.append(uSuperDict[int(row[0])])
+            v_nodes.append(vSuperDict[int(row[1])])
+
+    dict = {
+        'u_nodes': np.int64(u_nodes),
+        'v_nodes': np.int64(v_nodes),
+        'ratings': np.float32(ratings)
+    }
+    data_train = pd.DataFrame(data=dict)
+    data_test = pd.DataFrame(data=dict)
+
+
+
+    # data_train = pd.read_csv(
+    #     filename_train, sep=sep, header=None,
+    #     names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
+    #
+    # data_test = pd.read_csv(
+    #     filename_test, sep=sep, header=None,
+    #     names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
 
     '''
     sep = '/t'
@@ -389,9 +423,9 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     data_array = np.concatenate([data_array_train, data_array_test], axis=0)
 
-    u_nodes_ratings = data_array[:, 0].astype(dtypes['u_nodes'])
-    v_nodes_ratings = data_array[:, 1].astype(dtypes['v_nodes'])
-    ratings = data_array[:, 2].astype(dtypes['ratings'])
+    u_nodes_ratings = data_array[:, 1].astype(dtypes['u_nodes'])
+    v_nodes_ratings = data_array[:, 2].astype(dtypes['v_nodes'])
+    ratings = data_array[:, 0].astype(dtypes['ratings'])
 
     u_nodes_ratings, u_dict, num_users = map_data(u_nodes_ratings)
     v_nodes_ratings, v_dict, num_items = map_data(v_nodes_ratings)
@@ -408,8 +442,8 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     # assumes that ratings_train contains at least one example of every rating type
     rating_dict = {r: i for i, r in enumerate(np.sort(np.unique(ratings)).tolist())}
-
     labels = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+
     labels[u_nodes, v_nodes] = np.array([rating_dict[r] for r in ratings])
 
     for i in range(len(u_nodes)):
