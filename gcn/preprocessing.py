@@ -12,13 +12,18 @@ import pandas as pd
 import csv
 
 from data_utils import load_data, map_data, download_dataset
+from feature import makeFeature
+
 
 def normalize_features(feat):
 
     degree = np.asarray(feat.sum(1)).flatten()
 
     # set zeros to inf to avoid dividing by zero
-    degree[degree == 0.] = np.inf
+    if len(degree) == 610:
+        pass
+    else:
+        degree[degree == 0.] = np.inf
 
     degree_inv = 1. / degree
     degree_inv_mat = sp.diags([degree_inv], [0])
@@ -62,7 +67,6 @@ def preprocess_user_item_features(u_features, v_features):
     Creates one big feature matrix out of user features and item features.
     Stacks item features under the user features.
     """
-
     zero_csr_u = sp.csr_matrix((u_features.shape[0], v_features.shape[1]), dtype=u_features.dtype)
     zero_csr_v = sp.csr_matrix((v_features.shape[0], u_features.shape[1]), dtype=v_features.dtype)
 
@@ -509,8 +513,8 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     class_values = np.sort(np.unique(ratings))
 
-    if dataset =='ml_100k':
-
+    if dataset == 'ml_100k':
+        '''
         # movie features (genres)
         sep = r'|'
         movie_file = 'data/' + dataset.replace('_', '-') + '/u.item'
@@ -559,7 +563,8 @@ def load_official_trainvaltest_split(dataset, testing=False):
                 u_features[u_dict[u_id], 1] = gender_dict[row['gender']]
                 # occupation
                 u_features[u_dict[u_id], occupation_dict[row['occupation']]] = 1.
-
+        '''
+        u_features, v_features = makeFeature()
     elif dataset == 'ml_1m':
 
         # load movie features
