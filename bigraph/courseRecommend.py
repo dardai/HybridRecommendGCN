@@ -136,11 +136,15 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
         if ((index + 1) in testIDs):
             test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+            train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+            if (int(row[2]) >= 3.0):
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
         else:
             train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
@@ -302,3 +306,5 @@ def Main():
                     tb.add_row(row)
             print("为该用户推荐学习的课程有：")
             print(tb)
+
+
