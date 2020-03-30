@@ -364,6 +364,26 @@ def load_official_trainvaltest_split(dataset, testing=False):
     uSuperDict = {r: i for i, r in enumerate(list(set(u_nodes)))}
     vSuperDict = {r: i for i, r in enumerate(list(set(v_nodes)))}
     print(uSuperDict)
+    #保存字典
+    u_listKey = []
+    u_listValue = []
+    for key in uSuperDict:
+        u_listKey.append(uSuperDict[key])
+        u_listValue.append(key)
+
+    u_to_dictr = zip(u_listKey, u_listValue)
+    u_dictr = dict((u_listKey, u_listValue) for u_listKey, u_listValue in u_to_dictr)
+
+    v_listKey = []
+    v_listValue = []
+    for key in vSuperDict:
+        v_listKey.append(vSuperDict[key])
+        v_listValue.append(key)
+    v_to_dictr = zip(v_listKey, v_listValue)
+    v_dictr = dict((v_listKey, v_listValue) for v_listKey, v_listValue in v_to_dictr)
+
+    np.save('u_dictr.npy', u_dictr)
+    np.save('v_dictr.npy', v_dictr)
 
     new_u_nodes, new_v_nodes = [], []
     for uid in u_nodes:
@@ -390,26 +410,20 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     '''
     sep = '/t'
-
     # Check if files exist and download otherwise
     # files = ['/u1.base', '/u1.test', '/u.item', '/u.user']
     # fname = dataset
     # data_dir = 'data/' + fname
-
     # here we make this download operation unavailable, use local files instead
     # download_dataset(fname, files, data_dir)
-
     dtypes = {
         'u_nodes': np.int64, 'v_nodes': np.int32,
         'ratings': np.float32}
-
     filename_train = 'u1.base'
     filename_test = 'u1.test'
-
     data_train = pd.read_csv(
         filepath_or_buffer=filename_train, sep=sep, header=None,
         names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes)
-
     data_test = pd.read_csv(
         filename_test, sep=sep, header=None,
         names=['u_nodes', 'v_nodes', 'ratings'], dtype=dtypes,
@@ -525,34 +539,25 @@ def load_official_trainvaltest_split(dataset, testing=False):
                          'Thriller', 'War', 'Western']
         movie_df = pd.read_csv(movie_file, sep=sep, header=None,
                                names=movie_headers, engine='python')
-
         genre_headers = movie_df.columns.values[6:]
         num_genres = genre_headers.shape[0]
-
         v_features = np.zeros((num_items, num_genres), dtype=np.float32)
         for movie_id, g_vec in zip(movie_df['movie id'].values.tolist(), movie_df[genre_headers].values.tolist()):
             # check if movie_id was listed in ratings file and therefore in mapping dictionary
             if movie_id in v_dict.keys():
                 v_features[v_dict[movie_id], :] = g_vec
-
         # user features
-
         sep = r'|'
         users_file = 'data/' + dataset.replace('_', '-') + '/u.user'
         users_headers = ['user id', 'age', 'gender', 'occupation', 'zip code']
         users_df = pd.read_csv(users_file, sep=sep, header=None,
                                names=users_headers, engine='python')
-
         occupation = set(users_df['occupation'].values.tolist())
-
         age = users_df['age'].values
         age_max = age.max()
-
         gender_dict = {'M': 0., 'F': 1.}
         occupation_dict = {f: i for i, f in enumerate(occupation, start=2)}
-
         num_feats = 2 + len(occupation_dict)
-
         u_features = np.zeros((num_users, num_feats), dtype=np.float32)
         for _, row in users_df.iterrows():
             u_id = row['user id']

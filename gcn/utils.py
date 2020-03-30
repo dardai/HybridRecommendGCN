@@ -3,7 +3,7 @@
 from __future__ import division
 from __future__ import print_function
 import csv
-
+import numpy as np
 
 def construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero, v_features_nonzero,
                         support, support_t, labels, u_indices, v_indices, class_values,
@@ -49,6 +49,18 @@ def write_csv(labels, u_indices, v_indices):
         content.writerow([user, vedio, score])
     print("-----------write_csv--------------")
 
+def write_csv2(labels, u_indices, v_indices):
+    gcn_u_dictr = np.load('u_dictr.npy', allow_pickle=True).item()
+    gcn_v_dictr = np.load('v_dictr.npy', allow_pickle=True).item()
+    print("-----------write_csv2--------------")
+    f = open('resultToRoc.csv', 'wb+')
+    content = csv.writer(f)
+    content.writerow(['uid', 'cid', 'score'])
+    for user, vedio, score in zip(u_indices, v_indices, labels):
+        user = gcn_u_dictr[user]
+        vedio = gcn_v_dictr[vedio]
+        content.writerow([user, vedio, score])
+    print("-----------write_csv2--------------")
 
 def getReversalDict(idDict):
     newDict = dict()
