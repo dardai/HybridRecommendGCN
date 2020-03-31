@@ -22,7 +22,8 @@ from preprocessing import create_trainvaltest_split, sparse_to_tuple, \
     preprocess_user_item_features, globally_normalize_bipartite_adjacency, \
     load_data_monti, load_official_trainvaltest_split, normalize_features
 from model import RecommenderGAE, RecommenderSideInfoGAE
-from utils import construct_feed_dict, write_csv, getReversalDict, getRealId
+from utils import construct_feed_dict, getReversalDict, getRealId
+from utils import write_csv2 as write_csv
 
 # Set random seed
 # seed = 123 # use only for unit testing
