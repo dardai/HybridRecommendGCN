@@ -459,7 +459,7 @@ def makeFeature():
     for index in range(course_length):
         value = CourseType.CourseType_None
         if index in course_data_dict.keys():
-            value = transformCourseType(course_data_dict[index][2])
+            value = transformCourseType(course_data_dict[index][1])
 
         course_feature.append(getEnumValue(value))
 
