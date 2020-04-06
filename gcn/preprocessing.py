@@ -637,7 +637,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
         test_labels, u_test_idx, v_test_idx, class_values, uSuperDict, vSuperDict
 
 
-def all_train_split():
+def new_train_split():
     # 此设置指定numpy在打印时输出全部元素
     np.set_printoptions(threshold=np.inf)
 
@@ -829,6 +829,10 @@ def all_train_split():
     print("User features shape: " + str(u_features.shape))
     print("Item features shape: " + str(v_features.shape))
 
+    # 训练集和验证集从二部图输入取数据
+    train_labels, u_train_idx, v_train_idx, val_labels,\
+        u_val_idx, v_val_idx, uSuperDict, vSuperDict = get_original_labels()
+
     # 最后返回全部数据
     return u_features, v_features, rating_mx_train, train_labels, \
         u_train_idx, v_train_idx, val_labels, u_val_idx, v_val_idx, \
@@ -938,9 +942,10 @@ def get_original_labels():
     labels = labels.reshape([-1])
     # print(labels)
 
-    # 最初的操作是指定训练集、测试集、验证集数据容量
-    # 这里我们把数据都分给测试集
-    num_original = data_array.shape[0]
+    # 这里我们分出训练集和验证集，训练集是整体数据的1/5
+    num_train = data_array.shape[0]
+    num_val = int(np.ceil(num_train * 0.2))
+    num_train = num_train - num_val
 
     # 创建用户-课程对
     pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
@@ -951,35 +956,42 @@ def get_original_labels():
     for i in range(len(ratings)):
         assert (labels[idx_nonzero[i]] == rating_dict[ratings[i]])
 
-    # 只保留训练集
-    idx_nonzero_original = idx_nonzero[0:num_original]
-    # print(idx_nonzero_original.shape)
-    pairs_nonzero_original = pairs_nonzero[0:num_original]
+    # 保留训练集的索引和数据对
+    idx_nonzero_train = idx_nonzero[0:num_train]
+    # print(idx_nonzero_train.shape)
+    pairs_nonzero_train = pairs_nonzero[0:num_train]
 
     # 将训练集打散，也就是用户-课程对打散，同时评分在labels里的位置也打散
-    rand_idx = range(len(idx_nonzero_original))
+    rand_idx = range(len(idx_nonzero_train))
     # print(rand_idx)
     np.random.seed(42)
     np.random.shuffle(rand_idx)
-    # print(idx_nonzero_original)
-    idx_nonzero_original = idx_nonzero_original[rand_idx]
-    # print(idx_nonzero_original)
-    pairs_nonzero_original = pairs_nonzero_original[rand_idx]
+    # print(idx_nonzero_train)
+    idx_nonzero_train = idx_nonzero_train[rand_idx]
+    # print(idx_nonzero_train)
+    pairs_nonzero_train = pairs_nonzero_train[rand_idx]
 
     # 把打散的训练集和测试集合成完整的集合
     # 目前的处理下测试集为空，实际上全是打散的训练集
-    idx_nonzero = idx_nonzero_original
-    pairs_nonzero = pairs_nonzero_original
+    idx_nonzero = idx_nonzero_train
+    pairs_nonzero = pairs_nonzero_train
 
     # 取出label中测试集元素对应的位置，以及用户-课程对
-    original_idx = idx_nonzero[0:num_original]
-    original_pairs_idx = pairs_nonzero[0:num_original]
+    val_idx = idx_nonzero[0:num_val]
+    train_idx = idx_nonzero[num_val:num_train+num_val]
+
+    val_pairs_idx = pairs_nonzero[0:num_val]
+    train_pairs_idx = pairs_nonzero[num_val:num_train+num_val]
 
     # 通过转置，把数据集中的用户和课程分离在向量中
-    u_original_idx, v_original_idx = original_pairs_idx.transpose()
+    u_train_idx, v_train_idx = train_pairs_idx.transpose()
+    u_val_idx, v_val_idx = val_pairs_idx.transpose()
 
     # 对存储评分的label向量进行相同的切分
-    original_labels = labels[original_idx]
+    train_labels = labels[train_idx]
+    val_labels = labels[val_idx]
 
     # 最后返回二部图输入的训练集
-    return original_labels, u_original_idx, v_original_idx, uOriginalDict, vOriginalDict
+    return train_labels, u_train_idx, v_train_idx, \
+        val_labels, u_val_idx, v_val_idx,\
+        uOriginalDict, vOriginalDict
