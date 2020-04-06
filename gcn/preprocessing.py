@@ -255,7 +255,7 @@ def load_data_monti(dataset, testing=False):
     labels[u_nodes, v_nodes] = np.array([rating_dict[r] for r in ratings])
 
     for i in range(len(u_nodes)):
-        assert (labels[u_nodes[i], v_nodes[i]] == rating_dict[ratings[i]])
+        assert(labels[u_nodes[i], v_nodes[i]] == rating_dict[ratings[i]])
 
     labels = labels.reshape([-1])
 
@@ -286,7 +286,7 @@ def load_data_monti(dataset, testing=False):
     train_idx = idx_nonzero[num_val:num_train + num_val]
     test_idx = idx_nonzero[num_train + num_val:]
 
-    assert (len(test_idx) == num_test)
+    assert(len(test_idx) == num_test)
 
     val_pairs_idx = pairs_nonzero[0:num_val]
     train_pairs_idx = pairs_nonzero[num_val:num_train + num_val]
@@ -363,7 +363,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     uSuperDict = {r: i for i, r in enumerate(list(set(u_nodes)))}
     vSuperDict = {r: i for i, r in enumerate(list(set(v_nodes)))}
     print(uSuperDict)
-    # 保存字典
+    #保存字典
     u_listKey = []
     u_listValue = []
     for key in uSuperDict:
@@ -475,7 +475,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
     idx_nonzero = np.array([u * num_items + v for u, v in pairs_nonzero])
 
     for i in range(len(ratings)):
-        assert (labels[idx_nonzero[i]] == rating_dict[ratings[i]])
+        assert(labels[idx_nonzero[i]] == rating_dict[ratings[i]])
 
     idx_nonzero_train = idx_nonzero[0:num_train + num_val]
     idx_nonzero_test = idx_nonzero[num_train + num_val:]
@@ -645,7 +645,7 @@ def new_train_split():
     u_nodes, v_nodes, ratings = [], [], []
     i = 0
     # 注意这里要换用二部图的输出，有待修改
-    with open('mat.csv', 'r') as f:
+    with open('toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))
@@ -848,7 +848,7 @@ def get_original_labels():
     u_nodes, v_nodes, ratings = [], [], []
     i = 0
     # 注意这里要使用二部图的输入作为初始数据
-    with open('mat.csv', 'r') as f:
+    with open('bg_input.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))
