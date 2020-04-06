@@ -644,7 +644,7 @@ def new_train_split():
     # 数据输入GCN前进行一次转换,手动构造dataframe
     u_nodes, v_nodes, ratings = [], [], []
     i = 0
-    # 注意这里要换用二部图的输出，有待修改
+    # 注意这里要换用二部图的输出
     with open('toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
