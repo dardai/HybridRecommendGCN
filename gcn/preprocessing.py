@@ -637,8 +637,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
         test_labels, u_test_idx, v_test_idx, class_values, uSuperDict, vSuperDict
 
 
-def test_split():
-    print("here we call test_split")
+def all_train_split():
     # 此设置指定numpy在打印时输出全部元素
     np.set_printoptions(threshold=np.inf)
 
