@@ -21,7 +21,7 @@ from numpy import *
 from preprocessing import create_trainvaltest_split, sparse_to_tuple, \
     preprocess_user_item_features, globally_normalize_bipartite_adjacency, \
     load_data_monti, load_official_trainvaltest_split, normalize_features, \
-    all_train_split, get_original_labels
+    new_train_split, get_original_labels
 from model import RecommenderGAE, RecommenderSideInfoGAE
 from utils import construct_feed_dict, getReversalDict, getRealId
 from utils import write_csv2 as write_csv
@@ -160,9 +160,7 @@ elif DATASET == 'ml_100k':
     u_features, v_features, adj_train, train_labels, train_u_indices, \
         train_v_indices, val_labels, val_u_indices, val_v_indices, \
         test_labels, test_u_indices, test_v_indices, class_values, \
-        u_dict, v_dict = all_train_split()
-    # 根据二部图输入将关键数据覆盖
-    train_labels, train_u_indices, train_v_indices, u_dict, v_dict = get_original_labels()
+        u_dict, v_dict = new_train_split()
 else:
     print("Using random dataset split ...")
     u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices, \
