@@ -746,11 +746,10 @@ def new_train_split():
     labels = labels.reshape([-1])
     print(labels.shape)
 
-    # 最初的操作是指定训练集、测试集、验证集数据容量
-    # 这里我们把数据都分给测试集
+    # 这里我们分出训练集和验证集，训练集是整体数据的1/5
     num_train = data_array.shape[0]
-    num_val = 0
-    num_test = 0
+    num_val = int(np.ceil(num_train * 0.2))
+    num_train = num_train - num_val
 
     # 创建用户-课程对
     pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
@@ -761,17 +760,10 @@ def new_train_split():
     for i in range(len(ratings)):
         assert (labels[idx_nonzero[i]] == rating_dict[ratings[i]])
 
-    # 源处理会切分训练集、测试集、训练集
-    # 这里直接把数据都划给了训练集
-    # 分别切分了labels索引，以及用户-课程对
+    # 保留训练集的索引和数据对
     idx_nonzero_train = idx_nonzero[0:num_train]
-    idx_nonzero_test = idx_nonzero[num_train:]
     # print(idx_nonzero_train.shape)
-    # print(idx_nonzero_test.shape)
-
     pairs_nonzero_train = pairs_nonzero[0:num_train]
-    pairs_nonzero_test = pairs_nonzero[num_train:]
-    # print(pairs_nonzero_test)
 
     # 将训练集打散，也就是用户-课程对打散，同时评分在labels里的位置也打散
     rand_idx = range(len(idx_nonzero_train))
@@ -785,30 +777,23 @@ def new_train_split():
 
     # 把打散的训练集和测试集合成完整的集合
     # 目前的处理下测试集为空，实际上全是打散的训练集
-    idx_nonzero = np.concatenate([idx_nonzero_train, idx_nonzero_test], axis=0)
-    pairs_nonzero = np.concatenate([pairs_nonzero_train, pairs_nonzero_test], axis=0)
+    idx_nonzero = idx_nonzero_train
+    pairs_nonzero = pairs_nonzero_train
 
-    # 取出label中测试集、验证集和训练集元素对应的位置，以及用户-课程对
-    # 这里只留下训练集，测试集和验证集是空的
-    train_idx = idx_nonzero[0:num_train]
-    val_idx = idx_nonzero[0:0]
-    test_idx = idx_nonzero[num_train:]
+    # 取出label中测试集元素对应的位置，以及用户-课程对
+    val_idx = idx_nonzero[0:num_val]
+    train_idx = idx_nonzero[num_val:num_train+num_val]
 
-    train_pairs_idx = pairs_nonzero[0:num_train]
-    val_pairs_idx = pairs_nonzero[0:0]
-    test_pairs_idx = pairs_nonzero[num_train:]
-    # print(val_pairs_idx)
-    # print(test_pairs_idx)
+    val_pairs_idx = pairs_nonzero[0:num_val]
+    train_pairs_idx = pairs_nonzero[num_val:num_train+num_val]
 
     # 通过转置，把数据集中的用户和课程分离在向量中
     u_train_idx, v_train_idx = train_pairs_idx.transpose()
-    u_test_idx, v_test_idx = test_pairs_idx.transpose()
     u_val_idx, v_val_idx = val_pairs_idx.transpose()
 
-    # 根据数据集元素的索引位置，从存储评分的label向量提取出评分
+    # 对存储评分的label向量进行相同的切分
     train_labels = labels[train_idx]
     val_labels = labels[val_idx]
-    test_labels = labels[test_idx]
     # print(train_labels)
 
     # 建立评分向量，并将其变形为矩阵
@@ -829,14 +814,10 @@ def new_train_split():
     print("User features shape: " + str(u_features.shape))
     print("Item features shape: " + str(v_features.shape))
 
-    # 训练集和验证集从二部图输入取数据
-    train_labels, u_train_idx, v_train_idx, val_labels,\
-        u_val_idx, v_val_idx, uSuperDict, vSuperDict = get_original_labels()
-
     # 最后返回全部数据
     return u_features, v_features, rating_mx_train, train_labels, \
         u_train_idx, v_train_idx, val_labels, u_val_idx, v_val_idx, \
-        test_labels, u_test_idx, v_test_idx, class_values, uSuperDict, vSuperDict
+        class_values, uSuperDict, vSuperDict
 
 
 def get_original_labels():
@@ -944,8 +925,6 @@ def get_original_labels():
 
     # 这里我们分出训练集和验证集，训练集是整体数据的1/5
     num_train = data_array.shape[0]
-    num_val = int(np.ceil(num_train * 0.2))
-    num_train = num_train - num_val
 
     # 创建用户-课程对
     pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
@@ -977,21 +956,15 @@ def get_original_labels():
     pairs_nonzero = pairs_nonzero_train
 
     # 取出label中测试集元素对应的位置，以及用户-课程对
-    val_idx = idx_nonzero[0:num_val]
-    train_idx = idx_nonzero[num_val:num_train+num_val]
-
-    val_pairs_idx = pairs_nonzero[0:num_val]
-    train_pairs_idx = pairs_nonzero[num_val:num_train+num_val]
+    train_idx = idx_nonzero[0:num_train]
+    train_pairs_idx = pairs_nonzero[0:num_train]
 
     # 通过转置，把数据集中的用户和课程分离在向量中
     u_train_idx, v_train_idx = train_pairs_idx.transpose()
-    u_val_idx, v_val_idx = val_pairs_idx.transpose()
 
     # 对存储评分的label向量进行相同的切分
     train_labels = labels[train_idx]
-    val_labels = labels[val_idx]
 
     # 最后返回二部图输入的训练集
-    return train_labels, u_train_idx, v_train_idx, \
-        val_labels, u_val_idx, v_val_idx,\
+    return train_labels, u_train_idx, v_train_idx,\
         uOriginalDict, vOriginalDict

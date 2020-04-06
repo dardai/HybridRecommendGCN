@@ -79,7 +79,7 @@ fp.add_argument('-f', '--features', dest='features',
                 help="Whether to use features (1) or not (0)", action='store_true')
 fp.add_argument('-no_f', '--no_features', dest='features',
                 help="Whether to use features (1) or not (0)", action='store_false')
-ap.set_defaults(features=False)
+ap.set_defaults(features=True)
 
 fp = ap.add_mutually_exclusive_group(required=False)
 fp.add_argument('-ws', '--write_summary', dest='write_summary',
@@ -159,8 +159,7 @@ elif DATASET == 'ml_100k':
     print("Using official MovieLens dataset split u1.base/u1.test with 20% validation set size...")
     u_features, v_features, adj_train, train_labels, train_u_indices, \
         train_v_indices, val_labels, val_u_indices, val_v_indices, \
-        test_labels, test_u_indices, test_v_indices, class_values, \
-        u_dict, v_dict = new_train_split()
+        class_values, u_dict, v_dict = new_train_split()
 else:
     print("Using random dataset split ...")
     u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices, \
@@ -239,18 +238,6 @@ if ACCUM == 'stack':
                   it can be evenly split in %d splits.\n""" % (HIDDEN[0], num_support * div, num_support))
     HIDDEN[0] = num_support * div
 
-# Collect all user and item nodes for test set
-test_u = list(set(test_u_indices))
-test_v = list(set(test_v_indices))
-test_u_dict = {n: i for i, n in enumerate(test_u)}
-test_v_dict = {n: i for i, n in enumerate(test_v)}
-
-test_u_indices = np.array([test_u_dict[o] for o in test_u_indices])
-test_v_indices = np.array([test_v_dict[o] for o in test_v_indices])
-
-test_support = support[np.array(test_u)]
-test_support_t = support_t[np.array(test_v)]
-
 # Collect all user and item nodes for validation set
 val_u = list(set(val_u_indices))
 val_v = list(set(val_v_indices))
@@ -277,9 +264,6 @@ train_support_t = support_t[np.array(train_v)]
 
 # features as side info
 if FEATURES:
-    test_u_features_side = u_features_side[np.array(test_u)]
-    test_v_features_side = v_features_side[np.array(test_v)]
-
     val_u_features_side = u_features_side[np.array(val_u)]
     val_v_features_side = v_features_side[np.array(val_v)]
 
@@ -287,9 +271,6 @@ if FEATURES:
     train_v_features_side = v_features_side[np.array(train_v)]
 
 else:
-    test_u_features_side = None
-    test_v_features_side = None
-
     val_u_features_side = None
     val_v_features_side = None
 
@@ -349,9 +330,6 @@ else:
                            logging=True)
 
 # Convert sparse placeholders to tuples to construct feed_dict
-test_support = sparse_to_tuple(test_support)
-test_support_t = sparse_to_tuple(test_support_t)
-
 val_support = sparse_to_tuple(val_support)
 val_support_t = sparse_to_tuple(val_support_t)
 
@@ -366,6 +344,9 @@ num_features = u_features[2][1]
 u_features_nonzero = u_features[1].shape[0]
 v_features_nonzero = v_features[1].shape[0]
 
+# 使用二部图输入作为训练输出的idx以及损失函数的label
+# train_labels, train_u_indices, train_v_indices, u_dict, v_dict = get_original_labels()
+
 # Feed_dicts for validation and test set stay constant over different update steps
 train_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero,
                                       v_features_nonzero, train_support, train_support_t,
@@ -377,12 +358,6 @@ val_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_feat
                                     v_features_nonzero, val_support, val_support_t,
                                     val_labels, val_u_indices, val_v_indices, class_values, 0.,
                                     val_u_features_side, val_v_features_side)
-
-
-test_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero,
-                                     v_features_nonzero, test_support, test_support_t,
-                                     test_labels, test_u_indices, test_v_indices, class_values, 0.,
-                                     test_u_features_side, test_v_features_side)
 
 
 # Collect all variables to be logged into summary
@@ -498,22 +473,6 @@ write_csv(outs[0], train_u_indices, train_v_indices)
 if VERBOSE:
     print("\nOptimization Finished!")
     print('best validation score =', best_val_score, 'at iteration', best_epoch)
-
-
-if TESTING:
-    test_avg_loss, test_rmse = sess.run([model.loss, model.rmse], feed_dict=test_feed_dict)
-    print('test loss = ', test_avg_loss)
-    print('test rmse = ', test_rmse)
-
-    # restore with polyak averages of parameters
-    variables_to_restore = model.variable_averages.variables_to_restore()
-    saver = tf.train.Saver(variables_to_restore)
-    saver.restore(sess, save_path)
-
-    test_avg_loss, test_rmse = sess.run([model.loss, model.rmse], feed_dict=test_feed_dict)
-    print('polyak test loss = ', test_avg_loss)
-    print('polyak test rmse = ', test_rmse)
-
 else:
     # restore with polyak averages of parameters
     variables_to_restore = model.variable_averages.variables_to_restore()
