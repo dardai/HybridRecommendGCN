@@ -41,7 +41,7 @@ ap.add_argument("-d", "--dataset", type=str, default="ml_100k",
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
                 help="Learning rate")
 
-ap.add_argument("-e", "--epochs", type=int, default=30,
+ap.add_argument("-e", "--epochs", type=int, default=100,
                 help="Number training epochs")
 
 ap.add_argument("-hi", "--hidden", type=int, nargs=2, default=[500, 75],
@@ -473,10 +473,10 @@ saver = tf.train.Saver()
 save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.global_step)
 
 print("************************")
-outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=val_feed_dict)
+outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=train_feed_dict)
 # print(outs[0])
 user_n, item_n = sess.run([model.u_indices, model.v_indices],
-                          feed_dict=val_feed_dict)
+                          feed_dict=train_feed_dict)
 val_input, user_n, item_n = sess.run(
     [model.inputs, model.u_indices, model.v_indices],
     feed_dict=val_feed_dict)
@@ -490,7 +490,8 @@ content.writerow(getRealId(getReversalDict(v_dict), item_n))
 f = open('val_input', 'w')
 content = csv.writer(f)
 content.writerow(val_input)
-write_csv(outs[0], val_u_indices, val_v_indices)
+# print(outs[0].shape)
+write_csv(outs[0], train_u_indices, train_v_indices)
 
 if VERBOSE:
     print("\nOptimization Finished!")
