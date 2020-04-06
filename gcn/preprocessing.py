@@ -16,7 +16,6 @@ from feature import makeFeature
 
 
 def normalize_features(feat):
-
     degree = np.asarray(feat.sum(1)).flatten()
 
     # set zeros to inf to avoid dividing by zero

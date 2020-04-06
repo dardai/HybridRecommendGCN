@@ -41,7 +41,7 @@ ap.add_argument("-d", "--dataset", type=str, default="ml_100k",
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
                 help="Learning rate")
 
-ap.add_argument("-e", "--epochs", type=int, default=2000,
+ap.add_argument("-e", "--epochs", type=int, default=30,
                 help="Number training epochs")
 
 ap.add_argument("-hi", "--hidden", type=int, nargs=2, default=[500, 75],
@@ -94,6 +94,7 @@ fp.add_argument('-t', '--testing', dest='testing',
 fp.add_argument('-v', '--validation', dest='testing',
                 help="Option to only use validation set evaluation", action='store_false')
 ap.set_defaults(testing=False)
+
 
 args = vars(ap.parse_args())
 
@@ -379,10 +380,12 @@ val_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_feat
                                     val_labels, val_u_indices, val_v_indices, class_values, 0.,
                                     val_u_features_side, val_v_features_side)
 
+
 test_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero,
                                      v_features_nonzero, test_support, test_support_t,
                                      test_labels, test_u_indices, test_v_indices, class_values, 0.,
                                      test_u_features_side, test_v_features_side)
+
 
 # Collect all variables to be logged into summary
 merged_summary = tf.summary.merge_all()
@@ -424,6 +427,7 @@ for epoch in range(NB_EPOCH):
     print("____________________")
     print(len(outs[0]))
     print("____________________")
+
     f = open('result.csv', 'w')
     content = csv.writer(f)
 '''
@@ -467,9 +471,11 @@ for epoch in range(NB_EPOCH):
         saver = tf.train.Saver()
         saver.restore(sess, save_path)
 
+
 # store model including exponential moving averages
 saver = tf.train.Saver()
 save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.global_step)
+
 
 print("************************")
 outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=train_feed_dict)
@@ -494,6 +500,7 @@ write_csv(outs[0], train_u_indices, train_v_indices)
 if VERBOSE:
     print("\nOptimization Finished!")
     print('best validation score =', best_val_score, 'at iteration', best_epoch)
+
 
 if TESTING:
     test_avg_loss, test_rmse = sess.run([model.loss, model.rmse], feed_dict=test_feed_dict)
