@@ -20,7 +20,8 @@ from numpy import *
 
 from preprocessing import create_trainvaltest_split, sparse_to_tuple, \
     preprocess_user_item_features, globally_normalize_bipartite_adjacency, \
-    load_data_monti, load_official_trainvaltest_split, normalize_features
+    load_data_monti, load_official_trainvaltest_split, normalize_features, \
+    all_train_split, get_original_labels
 from model import RecommenderGAE, RecommenderSideInfoGAE
 from utils import construct_feed_dict, getReversalDict, getRealId
 from utils import write_csv2 as write_csv
@@ -40,7 +41,7 @@ ap.add_argument("-d", "--dataset", type=str, default="ml_100k",
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
                 help="Learning rate")
 
-ap.add_argument("-e", "--epochs", type=int, default=30,
+ap.add_argument("-e", "--epochs", type=int, default=2000,
                 help="Number training epochs")
 
 ap.add_argument("-hi", "--hidden", type=int, nargs=2, default=[500, 75],
@@ -93,7 +94,6 @@ fp.add_argument('-t', '--testing', dest='testing',
 fp.add_argument('-v', '--validation', dest='testing',
                 help="Option to only use validation set evaluation", action='store_false')
 ap.set_defaults(testing=False)
-
 
 args = vars(ap.parse_args())
 
@@ -149,7 +149,6 @@ elif FEATURES:
 else:
     datasplit_path = 'data/' + DATASET + '/nofeatures.pickle'
 
-
 if DATASET == 'flixster' or DATASET == 'douban' or DATASET == 'yahoo_music':
     u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices, \
         val_labels, val_u_indices, val_v_indices, test_labels, \
@@ -160,14 +159,16 @@ elif DATASET == 'ml_100k':
     u_features, v_features, adj_train, train_labels, train_u_indices, \
         train_v_indices, val_labels, val_u_indices, val_v_indices, \
         test_labels, test_u_indices, test_v_indices, class_values, \
-        u_dict, v_dict = load_official_trainvaltest_split(DATASET, TESTING)
+        u_dict, v_dict = all_train_split()
+    # 根据二部图输入将关键数据覆盖
+    train_labels, train_u_indices, train_v_indices, u_dict, v_dict = get_original_labels()
 else:
     print("Using random dataset split ...")
     u_features, v_features, adj_train, train_labels, train_u_indices, train_v_indices, \
         val_labels, val_u_indices, val_v_indices, test_labels, \
         test_u_indices, test_v_indices, class_values = create_trainvaltest_split(DATASET, DATASEED, TESTING,
-                                                                                 datasplit_path, SPLITFROMFILE,
-                                                                                 VERBOSE)
+                                                                             datasplit_path, SPLITFROMFILE,
+                                                                             VERBOSE)
 
 num_users, num_items = adj_train.shape
 
@@ -203,7 +204,6 @@ elif FEATURES and u_features is not None and v_features is not None:
 else:
     raise ValueError('Features flag is set to true but no features are loaded from dataset ' + DATASET)
 
-
 # global normalization
 support = []
 support_t = []
@@ -221,7 +221,6 @@ for i in range(NUMCLASSES):
     support_unnormalized_transpose = support_unnormalized.T
     support.append(support_unnormalized)
     support_t.append(support_unnormalized_transpose)
-
 
 support = globally_normalize_bipartite_adjacency(support, symmetric=SYM)
 support_t = globally_normalize_bipartite_adjacency(support_t, symmetric=SYM)
@@ -380,12 +379,10 @@ val_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_feat
                                     val_labels, val_u_indices, val_v_indices, class_values, 0.,
                                     val_u_features_side, val_v_features_side)
 
-
 test_feed_dict = construct_feed_dict(placeholders, u_features, v_features, u_features_nonzero,
                                      v_features_nonzero, test_support, test_support_t,
                                      test_labels, test_u_indices, test_v_indices, class_values, 0.,
                                      test_u_features_side, test_v_features_side)
-
 
 # Collect all variables to be logged into summary
 merged_summary = tf.summary.merge_all()
@@ -427,7 +424,6 @@ for epoch in range(NB_EPOCH):
     print("____________________")
     print(len(outs[0]))
     print("____________________")
-
     f = open('result.csv', 'w')
     content = csv.writer(f)
 '''
@@ -471,17 +467,15 @@ for epoch in range(NB_EPOCH):
         saver = tf.train.Saver()
         saver.restore(sess, save_path)
 
-
 # store model including exponential moving averages
 saver = tf.train.Saver()
 save_path = saver.save(sess, "tmp/%s.ckpt" % model.name, global_step=model.global_step)
 
-
 print("************************")
-outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=val_feed_dict)
+outs = sess.run([model.pred, model.loss, model.rmse], feed_dict=train_feed_dict)
 # print(outs[0])
 user_n, item_n = sess.run([model.u_indices, model.v_indices],
-                          feed_dict=val_feed_dict)
+                          feed_dict=train_feed_dict)
 val_input, user_n, item_n = sess.run(
     [model.inputs, model.u_indices, model.v_indices],
     feed_dict=val_feed_dict)
@@ -495,13 +489,11 @@ content.writerow(getRealId(getReversalDict(v_dict), item_n))
 f = open('val_input', 'w')
 content = csv.writer(f)
 content.writerow(val_input)
-write_csv(outs[0], val_u_indices, val_v_indices)
-
+write_csv(outs[0], train_u_indices, train_v_indices)
 
 if VERBOSE:
     print("\nOptimization Finished!")
     print('best validation score =', best_val_score, 'at iteration', best_epoch)
-
 
 if TESTING:
     test_avg_loss, test_rmse = sess.run([model.loss, model.rmse], feed_dict=test_feed_dict)

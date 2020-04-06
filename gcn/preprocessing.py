@@ -636,3 +636,351 @@ def load_official_trainvaltest_split(dataset, testing=False):
     return u_features, v_features, rating_mx_train, train_labels, \
         u_train_idx, v_train_idx, val_labels, u_val_idx, v_val_idx, \
         test_labels, u_test_idx, v_test_idx, class_values, uSuperDict, vSuperDict
+
+
+def all_train_split():
+    # 此设置指定numpy在打印时输出全部元素
+    np.set_printoptions(threshold=np.inf)
+
+    # 数据输入GCN前进行一次转换,手动构造dataframe
+    u_nodes, v_nodes, ratings = [], [], []
+    i = 0
+    # 注意这里要换用二部图的输出，有待修改
+    with open('toGcn.csv', 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            u_nodes.append(int(row[0]))
+            v_nodes.append(int(row[1]))
+            ratings.append(int(row[2]))
+
+    # 构造ID映射字典，从长ID映射为0开始的数字
+    uSuperDict = {r: i for i, r in enumerate(list(set(u_nodes)))}
+    vSuperDict = {r: i for i, r in enumerate(list(set(v_nodes)))}
+
+    # 构建用户反向字典，从数字映射回ID
+    u_listKey = []
+    u_listValue = []
+    for key in uSuperDict:
+        u_listKey.append(uSuperDict[key])
+        u_listValue.append(key)
+
+    u_to_dictr = zip(u_listKey, u_listValue)
+    u_dictr = dict((u_listKey, u_listValue) for u_listKey, u_listValue in u_to_dictr)
+
+    # 构造课程反向字典
+    v_listKey = []
+    v_listValue = []
+    for key in vSuperDict:
+        v_listKey.append(vSuperDict[key])
+        v_listValue.append(key)
+    v_to_dictr = zip(v_listKey, v_listValue)
+    v_dictr = dict((v_listKey, v_listValue) for v_listKey, v_listValue in v_to_dictr)
+
+    # 保存反向字典
+    np.save('u_dictr.npy', u_dictr)
+    np.save('v_dictr.npy', v_dictr)
+
+    # 抽取出映射过的ID，作为系统输入
+    new_u_nodes, new_v_nodes = [], []
+    for uid in u_nodes:
+        new_u_nodes.append(uSuperDict[uid])
+    for vid in v_nodes:
+        new_v_nodes.append(vSuperDict[vid])
+    u_nodes, v_nodes = new_u_nodes, new_v_nodes
+
+    data_dict = {
+        'u_nodes': np.int64(u_nodes),
+        'v_nodes': np.int64(v_nodes),
+        'ratings': np.float32(ratings)
+    }
+    # 根据转换过的ID重新构建评分表
+    data_array = pd.DataFrame(data=data_dict)
+
+    # 转换为三元组的二维数组，每个元组为[评分，UID，VID]
+    data_array = data_array.as_matrix().tolist()
+    data_array = np.array(data_array)
+    # print(data_array)
+
+    # 设定数据类型字典
+    dtypes = {
+        'u_nodes': np.int64, 'v_nodes': np.int64,
+        'ratings': np.float32}
+
+    # 分离出用户ID、内容ID、评分3个向量
+    u_nodes_ratings = data_array[:, 1].astype(dtypes['u_nodes'])
+    v_nodes_ratings = data_array[:, 2].astype(dtypes['v_nodes'])
+    ratings = data_array[:, 0].astype(dtypes['ratings'])
+    # print(u_nodes_ratings, v_nodes_ratings, ratings)
+
+    # 计算用户数量
+    # 这里的字典和上边的重复了，没啥用，拟删除
+    u_nodes_ratings, u_dict, num_users = map_data(u_nodes_ratings)
+    # print(u_nodes_ratings, u_dict)
+    v_nodes_ratings, v_dict, num_items = map_data(v_nodes_ratings)
+    print("num_users = {}".format(num_users))
+    print("num_item = {}".format(num_items))
+
+    # 转换数据类型
+    u_nodes_ratings = u_nodes_ratings.astype(np.int64)
+    v_nodes_ratings = v_nodes_ratings.astype(np.int32)
+    ratings = ratings.astype(np.float64)
+
+    # 将转换后的ID作为输入
+    u_nodes = u_nodes_ratings
+    v_nodes = v_nodes_ratings
+
+    # 假设每个评分等级至少有一条用户-课程交互数据
+    # 去重整理出评分等级
+    rating_dict = {r: i for i, r in enumerate(np.sort(np.unique(ratings)).tolist())}
+    # label数据初始化，用户数*课程数的矩阵，初始值为neutral_rating
+    # label会作为后续训练集、测试集切分的数据来源
+    neutral_rating = -1
+    labels = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+    # 根据ratings赋值，构造出评分矩阵
+    labels[u_nodes, v_nodes] = np.array([rating_dict[r] for r in ratings])
+
+    # 验证数据是否相等
+    for i in range(len(u_nodes)):
+        assert (labels[u_nodes[i], v_nodes[i]] == rating_dict[ratings[i]])
+
+    # 化为向量
+    labels = labels.reshape([-1])
+    print(labels.shape)
+
+    # 最初的操作是指定训练集、测试集、验证集数据容量
+    # 这里我们把数据都分给测试集
+    num_train = data_array.shape[0]
+    num_val = 0
+    num_test = 0
+
+    # 创建用户-课程对
+    pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
+    # 用户-课程对从矩阵压缩成向量后的绝对位置计算，也就是labels中的索引位置
+    idx_nonzero = np.array([u * num_items + v for u, v in pairs_nonzero])
+
+    # 验证转换是否正确
+    for i in range(len(ratings)):
+        assert (labels[idx_nonzero[i]] == rating_dict[ratings[i]])
+
+    # 源处理会切分训练集、测试集、训练集
+    # 这里直接把数据都划给了训练集
+    # 分别切分了labels索引，以及用户-课程对
+    idx_nonzero_train = idx_nonzero[0:num_train]
+    idx_nonzero_test = idx_nonzero[num_train:]
+    # print(idx_nonzero_train.shape)
+    # print(idx_nonzero_test.shape)
+
+    pairs_nonzero_train = pairs_nonzero[0:num_train]
+    pairs_nonzero_test = pairs_nonzero[num_train:]
+    # print(pairs_nonzero_test)
+
+    # 将训练集打散，也就是用户-课程对打散，同时评分在labels里的位置也打散
+    rand_idx = range(len(idx_nonzero_train))
+    # print(rand_idx)
+    np.random.seed(42)
+    np.random.shuffle(rand_idx)
+    # print(idx_nonzero_train)
+    idx_nonzero_train = idx_nonzero_train[rand_idx]
+    # print(idx_nonzero_train)
+    pairs_nonzero_train = pairs_nonzero_train[rand_idx]
+
+    # 把打散的训练集和测试集合成完整的集合
+    # 目前的处理下测试集为空，实际上全是打散的训练集
+    idx_nonzero = np.concatenate([idx_nonzero_train, idx_nonzero_test], axis=0)
+    pairs_nonzero = np.concatenate([pairs_nonzero_train, pairs_nonzero_test], axis=0)
+
+    # 取出label中测试集、验证集和训练集元素对应的位置，以及用户-课程对
+    # 这里只留下训练集，测试集和验证集是空的
+    train_idx = idx_nonzero[0:num_train]
+    val_idx = idx_nonzero[0:0]
+    test_idx = idx_nonzero[num_train:]
+
+    train_pairs_idx = pairs_nonzero[0:num_train]
+    val_pairs_idx = pairs_nonzero[0:0]
+    test_pairs_idx = pairs_nonzero[num_train:]
+    # print(val_pairs_idx)
+    # print(test_pairs_idx)
+
+    # 通过转置，把数据集中的用户和课程分离在向量中
+    u_train_idx, v_train_idx = train_pairs_idx.transpose()
+    u_test_idx, v_test_idx = test_pairs_idx.transpose()
+    u_val_idx, v_val_idx = val_pairs_idx.transpose()
+
+    # 根据数据集元素的索引位置，从存储评分的label向量提取出评分
+    train_labels = labels[train_idx]
+    val_labels = labels[val_idx]
+    test_labels = labels[test_idx]
+    # print(train_labels)
+
+    # 建立评分向量，并将其变形为矩阵
+    rating_mx_train = np.zeros(num_users * num_items, dtype=np.float32)
+    rating_mx_train[train_idx] = labels[train_idx].astype(np.float32) + 1.
+    # 进行矩阵压缩，得到矩阵三元组，即（i, j, Rij）
+    rating_mx_train = sp.csr_matrix(rating_mx_train.reshape(num_users, num_items))
+    # print(rating_mx_train)
+
+    # 去重取出评分等级
+    class_values = np.sort(np.unique(ratings))
+
+    # 根据特征建立用户与课程的描述向量,并稀疏化
+    u_features, v_features = makeFeature()
+    u_features = sp.csr_matrix(u_features)
+    v_features = sp.csr_matrix(v_features)
+
+    print("User features shape: " + str(u_features.shape))
+    print("Item features shape: " + str(v_features.shape))
+
+    # 最后返回全部数据
+    return u_features, v_features, rating_mx_train, train_labels, \
+        u_train_idx, v_train_idx, val_labels, u_val_idx, v_val_idx, \
+        test_labels, u_test_idx, v_test_idx, class_values, uSuperDict, vSuperDict
+
+
+def get_original_labels():
+    dtypes = {
+        'u_nodes': np.int64, 'v_nodes': np.int64,
+        'ratings': np.float32}
+
+    # 数据输入GCN前进行一次转换,手动构造dataframe
+    u_nodes, v_nodes, ratings = [], [], []
+    i = 0
+    # 注意这里要使用二部图的输入作为初始数据
+    with open('bg_input.csv', 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            u_nodes.append(int(row[0]))
+            v_nodes.append(int(row[1]))
+            ratings.append(int(row[2]))
+
+    # 构造ID映射字典，从长ID映射为0开始的数字
+    uOriginalDict = {r: i for i, r in enumerate(list(set(u_nodes)))}
+    vOriginalDict = {r: i for i, r in enumerate(list(set(v_nodes)))}
+
+    # 构建用户反向字典，从数字映射回ID
+    u_listKey = []
+    u_listValue = []
+    for key in uOriginalDict:
+        u_listKey.append(uOriginalDict[key])
+        u_listValue.append(key)
+
+    u_to_dictr = zip(u_listKey, u_listValue)
+    u_dictr = dict((u_listKey, u_listValue) for u_listKey, u_listValue in u_to_dictr)
+
+    # 构造课程反向字典
+    v_listKey = []
+    v_listValue = []
+    for key in vOriginalDict:
+        v_listKey.append(vOriginalDict[key])
+        v_listValue.append(key)
+    v_to_dictr = zip(v_listKey, v_listValue)
+    v_dictr = dict((v_listKey, v_listValue) for v_listKey, v_listValue in v_to_dictr)
+
+    # 保存反向字典
+    np.save('original_u_dict.npy', u_dictr)
+    np.save('original_v_dict.npy', v_dictr)
+
+    # 抽取出映射过的ID
+    new_u_nodes, new_v_nodes = [], []
+    for uid in u_nodes:
+        new_u_nodes.append(uOriginalDict[uid])
+    for vid in v_nodes:
+        new_v_nodes.append(vOriginalDict[vid])
+    u_nodes, v_nodes = new_u_nodes, new_v_nodes
+
+    data_dict = {
+        'u_nodes': np.int64(u_nodes),
+        'v_nodes': np.int64(v_nodes),
+        'ratings': np.float32(ratings)
+    }
+    # 根据转换过的ID重新构建评分表
+    data_array = pd.DataFrame(data=data_dict)
+
+    # 转换为三元组的二维数组，每个元组为[评分，UID，VID]
+    data_array = data_array.as_matrix().tolist()
+    data_array = np.array(data_array)
+    # print(data_array)
+
+    # 分离出用户ID、内容ID、评分3个向量
+    u_nodes_ratings = data_array[:, 1].astype(dtypes['u_nodes'])
+    v_nodes_ratings = data_array[:, 2].astype(dtypes['v_nodes'])
+    ratings = data_array[:, 0].astype(dtypes['ratings'])
+    # print(u_nodes_ratings, v_nodes_ratings, ratings)
+
+    # 计算用户数量
+    num_users = len(list(set(u_nodes_ratings)))
+    num_items = len(list(set(v_nodes_ratings)))
+    print("num_users = {}".format(num_users))
+    print("num_item = {}".format(num_items))
+
+    # 转换数据类型
+    u_nodes_ratings = u_nodes_ratings.astype(np.int64)
+    v_nodes_ratings = v_nodes_ratings.astype(np.int32)
+    ratings = ratings.astype(np.float64)
+
+    # 将转换后的ID作为输入
+    u_nodes = u_nodes_ratings
+    v_nodes = v_nodes_ratings
+
+    # 假设每个评分等级至少有一条用户-课程交互数据
+    # 去重整理出评分等级
+    rating_dict = {r: i for i, r in enumerate(np.sort(np.unique(ratings)).tolist())}
+    # label数据初始化，用户数*课程数的矩阵，初始值为neutral_rating
+    # label会作为后续训练集、测试集切分的数据来源
+    neutral_rating = -1
+    labels = np.full((num_users, num_items), neutral_rating, dtype=np.int32)
+    # 根据ratings赋值，构造出评分矩阵
+    labels[u_nodes, v_nodes] = np.array([rating_dict[r] for r in ratings])
+
+    # 验证数据是否相等
+    for i in range(len(u_nodes)):
+        assert (labels[u_nodes[i], v_nodes[i]] == rating_dict[ratings[i]])
+
+    # 化为向量
+    labels = labels.reshape([-1])
+    # print(labels)
+
+    # 最初的操作是指定训练集、测试集、验证集数据容量
+    # 这里我们把数据都分给测试集
+    num_original = data_array.shape[0]
+
+    # 创建用户-课程对
+    pairs_nonzero = np.array([[u, v] for u, v in zip(u_nodes, v_nodes)])
+    # 用户-课程对从矩阵压缩成向量后的绝对位置计算，也就是labels中的索引位置
+    idx_nonzero = np.array([u * num_items + v for u, v in pairs_nonzero])
+
+    # 验证转换是否正确
+    for i in range(len(ratings)):
+        assert (labels[idx_nonzero[i]] == rating_dict[ratings[i]])
+
+    # 只保留训练集
+    idx_nonzero_original = idx_nonzero[0:num_original]
+    # print(idx_nonzero_original.shape)
+    pairs_nonzero_original = pairs_nonzero[0:num_original]
+
+    # 将训练集打散，也就是用户-课程对打散，同时评分在labels里的位置也打散
+    rand_idx = range(len(idx_nonzero_original))
+    # print(rand_idx)
+    np.random.seed(42)
+    np.random.shuffle(rand_idx)
+    # print(idx_nonzero_original)
+    idx_nonzero_original = idx_nonzero_original[rand_idx]
+    # print(idx_nonzero_original)
+    pairs_nonzero_original = pairs_nonzero_original[rand_idx]
+
+    # 把打散的训练集和测试集合成完整的集合
+    # 目前的处理下测试集为空，实际上全是打散的训练集
+    idx_nonzero = idx_nonzero_original
+    pairs_nonzero = pairs_nonzero_original
+
+    # 取出label中测试集元素对应的位置，以及用户-课程对
+    original_idx = idx_nonzero[0:num_original]
+    original_pairs_idx = pairs_nonzero[0:num_original]
+
+    # 通过转置，把数据集中的用户和课程分离在向量中
+    u_original_idx, v_original_idx = original_pairs_idx.transpose()
+
+    # 对存储评分的label向量进行相同的切分
+    original_labels = labels[original_idx]
+
+    # 最后返回二部图输入的训练集
+    return original_labels, u_original_idx, v_original_idx, uOriginalDict, vOriginalDict

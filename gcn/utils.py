@@ -50,8 +50,8 @@ def write_csv(labels, u_indices, v_indices):
     print("-----------write_csv--------------")
 
 def write_csv2(labels, u_indices, v_indices):
-    gcn_u_dictr = np.load('u_dictr.npy', allow_pickle=True).item()
-    gcn_v_dictr = np.load('v_dictr.npy', allow_pickle=True).item()
+    gcn_u_dictr = np.load('original_u_dict.npy', allow_pickle=True).item()
+    gcn_v_dictr = np.load('original_v_dict.npy', allow_pickle=True).item()
     print("-----------write_csv2--------------")
     f = open('resultToRoc.csv', 'wb+')
     content = csv.writer(f)
