@@ -24,7 +24,7 @@ def makeDic(dataList):
     index = 0
     mdic, mdicr = {}, {}
     for row in dataList:
-        if not mdic[int(row[0])]:
+        if int(row[0]) not in mdic:
             mdic[int(row[0])] = index
             mdicr[index] = int(row[0])
             index += 1
