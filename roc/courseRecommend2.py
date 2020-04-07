@@ -131,17 +131,18 @@ def dataPreprocessiong():
     #保存二部图输入
     myfile = codecs.open("gcn/bg_input.csv", mode="w", encoding='utf-8')
     data.drop_duplicates(subset=[0,1],keep='first',inplace=True)
-    data = data.sort_values([0], ascending=[1])
     data.reset_index(inplace=True)
     #删除结果里没有的课程
     for i in range(len(data)):
         if data[1][i] not in dcL:
             data.drop(i,axis=0,inplace=True)
 
-    aa=data.drop_duplicates(subset=[1],keep='first')
-    print(aa.reset_index())
+    #打印去重的看有多少课程。0用户，1课程
+    # aa=data.drop_duplicates(subset=[1],keep='first')
+    # print(aa.reset_index())
     data.drop('index', axis=1, inplace=True)
     datalist = data.values.tolist()
+
     for row in datalist:
         row[0] = user_mdicr[int(row[0])-1]
         myfile.write(str(row[0]))
@@ -152,10 +153,34 @@ def dataPreprocessiong():
         myfile.write("\n")
     myfile.close()
 
+    #构造二部图的输入数据的真实值矩阵realGraph,以及长id到短id(0开始)的字典
+    userListNew = list(data[0])
+    for i in range(len(userListNew)):
+        userListNew[i] = user_mdicr[userListNew[i]-1]
+    userListNewTemp = sorted(list(set(userListNew)))
+    courseListNew = list(data[1])
+    courseListNewTemp = sorted(list(set(courseListNew)))
+    course_mdic_new={}
+    user_mdic_new={}
+
+    for i in range(len(userListNewTemp)):
+        user_mdic_new[userListNewTemp[i]] = i
+    for i in range(len(courseListNewTemp)):
+        course_mdic_new[courseListNewTemp[i]] = i
+
+    realGraph = nm.zeros((len(courseListNewTemp),len(userListNewTemp)))
+    print(len(courseListNewTemp))
+    for i in range(len(data)):
+        realGraph[[course_mdic_new[courseListNew[i]]],user_mdic_new[userListNew[i]]]=1
+
+    nm.savetxt('roc/realGraph.txt',realGraph)
+    nm.save('user_mdic_new.npy', user_mdic_new)
+    nm.save('course_mdic_new.npy', course_mdic_new)
+
     return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr,\
         dr_length, course_length, user_length, courseList
 
-
+#不切分的完整数据，用于计算二部图输出
 def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
     all_rated_graph = nm.zeros([course_length, user_length])    # 创建所有已评价矩阵
     train_graph = nm.zeros([course_length, user_length])    # 创建训练图矩阵
@@ -164,8 +189,6 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
 
     for index, row in data.iterrows():
-
-
             test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
             train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
@@ -173,24 +196,32 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             if (int(row[2]) >= 3.0):
                 train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-    # for index, row in data.iterrows():
-    #     if ((index + 1) in testIDs):
-    #         test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-    #         all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-    #         # train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-    #         # if (int(row[2]) >= 3.0):
-    #         #     train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
-    #     else:
-    #         train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-    #         all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-    #
-    #         if (int(row[2]) >= 3.0):
-    #             train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
-    #             train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
 
+#切分的数据，用于画ROC的计算
+def makeTrainMatrixSplit(data, course_length, user_length, dr_length, course_mdic):
+    all_rated_graph = nm.zeros([course_length, user_length])    # 创建所有已评价矩阵
+    train_graph = nm.zeros([course_length, user_length])    # 创建训练图矩阵
+    test_graph = nm.zeros([course_length, user_length])    # 创建测试图矩阵
+    train_rated_graph = nm.zeros([course_length, user_length])    # 创建训练集里已评价矩阵
+    testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
 
+    for index, row in data.iterrows():
+        if ((index + 1) in testIDs):
+            test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+            all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+        else:
+            train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+            all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+
+            if (int(row[2]) >= 3.0):
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+
+    return all_rated_graph, train_graph, test_graph, train_rated_graph
+
+#后缀为_split的均为供二部图画ROC的变量，用这些构造locate作为预测值画图
 def doBigraph():
     data, learned, course_mdic, course_mdicr, \
         user_mdic, user_mdicr, dr_length, course_length, \
@@ -199,18 +230,25 @@ def doBigraph():
     all_rated_graph, train_graph, test_graph, train_rated_graph = \
         makeTrainMatrix(data, course_length, user_length,
                         dr_length, course_mdic)
-
+    all_rated_graph_split, train_graph_split, test_graph_split, train_rated_graph_split = \
+        makeTrainMatrixSplit(data, course_length, user_length,
+                        dr_length, course_mdic)
     # 为资源配置矩阵做准备
     kjs = nm.zeros([course_length])
     kls = nm.zeros([user_length])
 
+    kjs_split = nm.zeros([course_length])
+    kls_split = nm.zeros([user_length])
+
     # 求产品的度
     for rid in range(course_length):
         kjs[rid] = train_graph[rid, :].sum()
+        kjs_split[rid] = train_graph_split[rid, :].sum()
 
     # 求用户的度
     for cid in range(user_length):
         kls[cid] = train_graph[:, cid].sum()
+        kls_split[cid] = train_graph_split[:, cid].sum()
 
     # 计算每个用户未选择产品的度
     s = nm.ones(user_length)
@@ -221,39 +259,52 @@ def doBigraph():
     for i in range(course_length):
         if (kjs[i] == 0.0):
             kjs[i] = 99999
+        if (kjs_split[i] == 0.0):
+            kjs_split[i] = 99999
     for i in range(user_length):
         if (kls[i] == 0.0):
             kls[i] = 99999
+        if (kls_split[i] == 0.0):
+            kls_split[i] = 99999
 
     # 求资源配额矩阵
     weights = nm.zeros([course_length, course_length])
+    weights_split = nm.zeros([course_length, course_length])
     # 转换为矩阵乘法和向量除法
     # 设定若干中间值
     gt = train_graph.T
     temp = nm.zeros([user_length, course_length])
+
+    gt_split = train_graph_split.T
+    temp_split = nm.zeros([user_length, course_length])
     for i in range(course_length):
         temp[:, i] = gt[:, i] / kls
+        temp_split[:, i] = gt_split[:, i] / kls_split
 
     # temp = nm.array(sparkMultiply(train_graph, temp,
     #                              user_length, course_length))
     temp = nm.matmul(train_graph, temp)
+    temp_split = nm.matmul(train_graph_split, temp_split)
     for i in range(course_length):
         weights[i, :] = temp[i, :] / kjs
+        weights_split[i, :] = temp_split[i, :] / kjs_split
 
     # 求各个用户的资源分配矩阵
     locate = nm.matmul(weights, train_rated_graph)
+    locate_split = nm.matmul(weights_split, train_rated_graph_split)
     # locate = nm.array(sparkMultiply(weights, train_rated_graph,
     #                                course_length, user_length))
     # 将算法产生的推荐结果以列表形式存储
 
     #保存矩阵、字典，用于画ROC曲线
     if drawRoc:
-        nm.savetxt("roc/bgLocate.txt", locate , delimiter=',')
-        nm.savetxt("roc/test_graph.txt", test_graph, delimiter=',')
+        nm.savetxt("roc/bgLocate.txt", locate_split , delimiter=',')
+        nm.savetxt("roc/test_graph.txt", test_graph_split, delimiter=',')
         nm.save('user_mdicr.npy', user_mdicr)
         nm.save('course_mdicr.npy', course_mdicr)
         nm.save('user_mdic.npy', user_mdic)
         nm.save('course_mdic.npy', course_mdic)
+
 
 
     recommend = []
@@ -278,7 +329,7 @@ def doBigraph():
 
     return locate, recommend_result, learned, user_length, ls, test_graph
 
-
+#二部图原来的正常输出
 def storeData(recommend_result):
 
     myfile = codecs.open("data.csv", mode="w", encoding='utf-8')
@@ -311,30 +362,24 @@ def storeDataAsGCNInput(recommend_result):
     df = pd.DataFrame(result_data)
     df = df.drop(2,axis=1)
     df.sort_values([0,3],ascending = [1,0],inplace=True)
-
     #df = df.groupby(0).head(5)
-    aa = df.drop_duplicates(subset=[1], keep='first')
-
-    print(aa.reset_index())
-
+    # aa = df.drop_duplicates(subset=[1], keep='first')
+    # print(aa.reset_index())
     grouped = df.values.tolist()
-
+    #按四舍五入处理推荐值，不保存推荐值为0的数据
     for row in grouped:
-        myfile.write(str(row[0]))
-        myfile.write(",")
-        myfile.write(str(row[1]))
-        myfile.write(",")
-
         tempRow = row[2]
-
         if (tempRow > 5):
             tempRow = 5
-        tempRow = math.ceil(tempRow )
+        tempRow = round(tempRow)
         tempRow = int(tempRow)
-        myfile.write(str(tempRow))
-
-        myfile.write("\n")
-
+        if tempRow != 0 :
+            myfile.write(str(row[0]))
+            myfile.write(",")
+            myfile.write(str(row[1]))
+            myfile.write(",")
+            myfile.write(str(tempRow))
+            myfile.write("\n")
     myfile.close()
 
 def bigraphMain():
