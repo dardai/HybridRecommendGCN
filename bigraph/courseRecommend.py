@@ -21,11 +21,12 @@ import codecs
 from globalConst import DataBaseOperateType, SetType
 from utils.extends import formatDataByType, makeDic
 from utils.databaseIo import DatabaseIo
-
+from roc.rocUtils import saveBgInputMartix,rocLocate
+from bgUtils import storeDataAsGCNInput
 
 # 定义将多条数据存入数据库操作
-
-
+drawRoc = True
+getGcnInput = True
 # 输入：由pysaprk中的行矩阵rdd转换成的列表，形如
 # [ DenseMatrix[1,1,1], DenseMatrix[1,1,1], DenseMatrix[1,1,1] ]
 # 返回：转换成功的列表，形如[ [1,1,1], [1,1,1], [1,1,1] ]
@@ -122,6 +123,22 @@ def dataPreprocessiong():
 
     data = pd.DataFrame(result)
 
+    # 用dcL删除某些结果里没有的课程
+    dc = pd.read_csv("roc/toGcn2.csv")
+    dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
+    dcL = list(dc['cid'])
+    #去重
+    data.drop_duplicates(subset=[0, 1], keep='first', inplace=True)
+    data.reset_index(inplace=True)
+    # 删除结果里没有的课程
+    for i in range(len(data)):
+        if data[1][i] not in dcL:
+            data.drop(i, axis=0, inplace=True)
+    data.drop('index', axis=1, inplace=True)
+
+    if drawRoc:
+        saveBgInputMartix(data,user_mdicr)
+
     return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr, \
            dr_length, course_length, user_length, courseList
 
@@ -132,20 +149,31 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
     test_graph = nm.zeros([course_length, user_length])  # 创建测试图矩阵
     train_rated_graph = nm.zeros([course_length, user_length])  # 创建训练集里已评价矩阵
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
-    for index, row in data.iterrows():
-        if ((index + 1) in testIDs):
+    #如果需要得到可以输入gcn的数据，就不切分数据集
+    if getGcnInput:
+        for index, row in data.iterrows():
             test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-            all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-            #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-            #if (int(row[2]) >= 3.0):
-            #    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
-        else:
             train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
                 train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+    else:
+        for index, row in data.iterrows():
+            if ((index + 1) in testIDs):
+                test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                #if (int(row[2]) >= 3.0):
+                #    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+            else:
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+
+                if (int(row[2]) >= 3.0):
+                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                    train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
 
@@ -158,7 +186,8 @@ def doBigraph():
     all_rated_graph, train_graph, test_graph, train_rated_graph = \
         makeTrainMatrix(data, course_length, user_length,
                         dr_length, course_mdic)
-
+    if drawRoc:
+        rocLocate(data,course_length,user_length,dr_length,course_mdic)
     # 为资源配置矩阵做准备
     kjs = nm.zeros([course_length])
     kls = nm.zeros([user_length])
@@ -256,6 +285,9 @@ def bigraphMain():
     locate, recommend_result, learned, \
     user_length, ls, test_graph = doBigraph()
     storeData(recommend_result)
+    #转换为GCN可输入的数据
+    if getGcnInput:
+        storeDataAsGCNInput(recommend_result)
 
     result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])
     result_data = sorted(result_data, key=lambda x: x[3], reverse=True)
