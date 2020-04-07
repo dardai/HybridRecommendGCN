@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 import numpy as nm
 import pandas as pd
+from scipy import interpolate
 
 def drawBigraphRoc():
     #读取从二部图中保存的矩阵
@@ -39,13 +40,14 @@ def drawBigraphRoc():
 
 
 def drawGCNRoc():
-    test_graph = nm.loadtxt('roc/test_graph.txt', delimiter=',')
+    realGraph = nm.loadtxt('roc/realGraph.txt')
     source_data = pd.read_csv('gcn/resultToRoc.csv')
 
-    # gcn_u_dictr = nm.load('gcn/u_dictr.npy',allow_pickle=True).item()
-    # gcn_v_dictr = nm.load('gcn/v_dictr.npy',allow_pickle=True).item()
-    bg_u_dict = nm.load('user_mdic.npy',allow_pickle=True).item()
-    bg_v_dict = nm.load('course_mdic.npy',allow_pickle=True).item()
+    # gcn_u_dictr = nm.load('gcn/.npy',allow_pickle=True).item()
+    # gcn_v_dictr = nm.load('gcn/.npy',allow_pickle=True).item()
+
+    bg_u_dict = nm.load('user_mdic_new.npy',allow_pickle=True).item()
+    bg_v_dict = nm.load('course_mdic_new.npy',allow_pickle=True).item()
 
 
     datalist = source_data.values.tolist()
@@ -62,6 +64,7 @@ def drawGCNRoc():
     dr_length = len(dr)
     course_length = len(course)
     user_length = len(user)
+
     print(course_length,user_length)
 
     '''
@@ -70,7 +73,7 @@ def drawGCNRoc():
     uid = source_data.uid.tolist()
     # for i in range(len(uid)):
     #     uid[i] = gcn_u_dictr[uid[i]]
-    #
+
 
     for i in range(len(uid)):
         uid[i] = bg_u_dict[uid[i]]
@@ -82,15 +85,32 @@ def drawGCNRoc():
     # for i in range(len(cid)):
     #     cid[i] = gcn_v_dictr[cid[i]]
 
-
     for i in range(len(cid)):
         cid[i] = bg_v_dict[cid[i]]
 
+
+    #从二部图的输入取对应真实值
+    real = nm.zeros((realGraph.shape))
+    for i in range(dr_length):
+             real[cid[i],uid[i]] = realGraph[cid[i],uid[i]]
+
+    #nm.savetxt('real.txt',real)
     # realList = []
+    #         print(cid[i],uid[i])
+    # for i in range(dr_length):
+    #     realList.append(test_graph[cid[i],uid[i]])
+
     # for index, row in source_data.iterrows():
     #     if(index  in range(dr_length)):
     #        realList.append(test_graph[cid[index], uid[index]])
     # nm.savetxt("rg.txt", realList, delimiter=',')
+
+    #预测值矩阵构造
+    predict = nm.zeros(realGraph.shape)
+    for i in range(dr_length):
+        predict[cid[i],uid[i]] = dr[i]
+    print(predict)
+    #nm.savetxt('predict.txt',predict)
 
     #标准化
     # for i in range(len(dr)):
@@ -98,17 +118,19 @@ def drawGCNRoc():
     # predict = dr
 
     #改551*1184
-    predict=nm.zeros((551,1184))
-    for i in range(len(cid)):
-        predict[cid[i]][uid[i]] = dr[i]
+    # predict=nm.zeros((161,624))
+    # for i in range(len(cid)):
+    #     predict[cid[i]][uid[i]] = dr[i]
 
-    testGraph = test_graph.flatten()
-    predGraph = predict.flatten()
-
+    realValue = real.flatten()
+    predictValue = predict.flatten()
+    # realValue = sorted(realValue)
+    # predictValue =sorted(predictValue)
     #nm.savetxt("predict.txt", predict, delimiter=',')
 
     #输入参数进行计算
-    fpr, tpr, threshold = roc_curve(testGraph, predGraph)
+    #fpr, tpr, threshold = roc_curve(realList, predict)
+    fpr, tpr, threshold = roc_curve(realValue, predictValue)
     print("假阳性率：")
     print(fpr)
     print("真阳性率：")
