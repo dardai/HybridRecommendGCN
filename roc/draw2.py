@@ -26,7 +26,7 @@ def drawBigraphRoc():
     lw = 2
     plt.figure(figsize=(8, 5))
     plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+             lw=lw, label='ROC curve (area = %0.4f)' % roc_auc)
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
@@ -39,7 +39,7 @@ def drawBigraphRoc():
 
 
 
-def drawGCNRoc():
+def drawGcnRoc():
     realGraph = nm.loadtxt('roc/realGraph.txt')
     source_data = pd.read_csv('gcn/resultToRoc.csv')
 
@@ -144,17 +144,18 @@ def drawGCNRoc():
     plt.figure(figsize=(8, 5))
 
     plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+             lw=lw, label='ROC curve (area = %0.4f)' % roc_auc)
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC for GCN')
+    plt.title('ROC for HybridRecommend')
     plt.legend(loc="lower right")
     plt.show()
+
 
 def Main():
 
     drawBigraphRoc()
-    drawGCNRoc()
+    drawGcnRoc()
