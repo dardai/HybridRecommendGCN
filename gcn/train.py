@@ -34,14 +34,14 @@ tf.set_random_seed(seed)
 
 # Settings
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", type=str, default="ml_100k",
-                choices=['ml_100k', 'ml_1m', 'ml_10m', 'douban', 'yahoo_music', 'flixster'],
+ap.add_argument("-d", "--dataset", type=str, default="FSL",
+                choices=['FSL', 'ml_1m', 'ml_10m', 'douban', 'yahoo_music', 'flixster'],
                 help="Dataset string.")
 
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
                 help="Learning rate")
 
-ap.add_argument("-e", "--epochs", type=int, default=30,
+ap.add_argument("-e", "--epochs", type=int, default=1000,
                 help="Number training epochs")
 
 ap.add_argument("-hi", "--hidden", type=int, nargs=2, default=[500, 75],
@@ -121,7 +121,7 @@ SELFCONNECTIONS = False
 SPLITFROMFILE = True
 VERBOSE = True
 
-if DATASET == 'ml_1m' or DATASET == 'ml_100k' or DATASET == 'douban':
+if DATASET == 'ml_1m' or DATASET == 'FSL' or DATASET == 'douban':
     NUMCLASSES = 5
 elif DATASET == 'ml_10m':
     NUMCLASSES = 10
@@ -155,7 +155,7 @@ if DATASET == 'flixster' or DATASET == 'douban' or DATASET == 'yahoo_music':
         val_labels, val_u_indices, val_v_indices, test_labels, \
         test_u_indices, test_v_indices, class_values = load_data_monti(DATASET, TESTING)
 
-elif DATASET == 'ml_100k':
+elif DATASET == 'FSL':
     print("Using official MovieLens dataset split u1.base/u1.test with 20% validation set size...")
     u_features, v_features, adj_train, train_labels, train_u_indices, \
         train_v_indices, val_labels, val_u_indices, val_v_indices, \
