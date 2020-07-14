@@ -157,7 +157,7 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
-                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
     else:
         for index, row in data.iterrows():
@@ -172,7 +172,7 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
                 all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
                 if (int(row[2]) >= 3.0):
-                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
                     train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
