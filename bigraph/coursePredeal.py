@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import sys
+import os
+#print(sys.path)
+project = '\\Desktop\\HybridRecommendGCN'  # 工作项目根目录
+sys.path.append(os.getcwd().split(project)[0] + project)
+#print(sys.path)
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 
@@ -39,3 +45,10 @@ def updateCourseDr():
     dbHandle.changeCloseFlag()
     dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr,
                    insertTuple)
+
+
+def main():
+    updateCourseDr()
+
+main()
+    

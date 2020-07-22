@@ -1,7 +1,13 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 # 周洋涛-2019.9
 # 本代码实现了二部图算法，并用批量存储的方法将产生的推荐结果存入到SQL server数据库中的course_model表中
+import sys
+import os
+#print(sys.path)
+project = '\\Desktop\\HybridRecommendGCN'  # 工作项目根目录
+sys.path.append(os.getcwd().split(project)[0] + project)
+#print(sys.path)
 # import databaseIo
 import prettytable as pt
 from decimal import Decimal
@@ -124,7 +130,7 @@ def dataPreprocessiong():
     data = pd.DataFrame(result)
 
     # 用dcL删除某些结果里没有的课程
-    dc = pd.read_csv("roc/toGcn2.csv")
+    dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
     dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
     dcL = list(dc['cid'])
     #去重
@@ -157,7 +163,7 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
-                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
     else:
         for index, row in data.iterrows():
@@ -166,13 +172,13 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
                 all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                 #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                 #if (int(row[2]) >= 3.0):
-                #    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                #    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
             else:
                 train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                 all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
                 if (int(row[2]) >= 3.0):
-                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
                     train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
@@ -340,3 +346,4 @@ def Main():
             print(tb)
 
 
+bigraphMain()

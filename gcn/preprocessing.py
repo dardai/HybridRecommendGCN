@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 from __future__ import division
 from __future__ import print_function
@@ -645,7 +645,7 @@ def new_train_split():
     u_nodes, v_nodes, ratings = [], [], []
     i = 0
     # 注意这里要换用二部图的输出
-    with open('toGcn.csv', 'r') as f:
+    with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))

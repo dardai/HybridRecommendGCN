@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
 import csv
 import numpy as np
@@ -478,7 +478,7 @@ def makeFeature():
 def getAllUserAndCourse():
     u_nodes, v_nodes, ratings = [], [], []
 
-    with open('toGcn.csv', 'r') as f:
+    with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))

@@ -1,11 +1,11 @@
-#!/usr/bin/env python 
+﻿#!/usr/bin/env python 
 # -*- coding:utf-8 -*-
 import codecs
 import pandas as pd
 
 #转化为可输入GCN的数据
 def storeDataAsGCNInput(recommend_result):
-    myfile = codecs.open("gcn/toGcn.csv", mode="w", encoding='utf-8')
+    myfile = codecs.open("C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     df = pd.DataFrame(result_data)
     df = df.drop(2,axis=1)
