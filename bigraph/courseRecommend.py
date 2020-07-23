@@ -130,7 +130,8 @@ def dataPreprocessiong():
     data = pd.DataFrame(result)
 
     # 用dcL删除某些结果里没有的课程
-    dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
+    #dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
+    dc = pd.read_csv("C:/Users/zyt/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
     dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
     dcL = list(dc['cid'])
     #去重
@@ -163,7 +164,8 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
-                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
+                #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
     else:
         for index, row in data.iterrows():
@@ -178,7 +180,8 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
                 all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
                 if (int(row[2]) >= 3.0):
-                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
+                    #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
+                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                     train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
@@ -288,6 +291,7 @@ def storeData(recommend_result):
 
 
 def bigraphMain():
+    print("run bigraph...")
     locate, recommend_result, learned, \
     user_length, ls, test_graph = doBigraph()
     storeData(recommend_result)
@@ -316,8 +320,9 @@ def bigraphMain():
     for i in range(user_length):
         if (test_graph[:, i].sum() > 0):
             usum += ((testIndice[i]).sum() / (ls[i] * test_graph[:, i].sum()))
-    print("the average value of r is:")
-    print(usum / user_length)
+    #print("the average value of r is:")
+    #print(usum / user_length)
+    print("bigraph success")
 
     return learned, result_data, test_graph
 
@@ -346,4 +351,4 @@ def Main():
             print(tb)
 
 
-bigraphMain()
+#bigraphMain()

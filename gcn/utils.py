@@ -53,7 +53,7 @@ def write_csv2(labels, u_indices, v_indices):
     gcn_u_dictr = np.load('u_dictr.npy', allow_pickle=True).item()
     gcn_v_dictr = np.load('v_dictr.npy', allow_pickle=True).item()
     print("-----------write_csv2--------------")
-    f = open('resultToRoc.csv', 'wb+')
+    f = open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/resultToRoc.csv', 'wb+')
     content = csv.writer(f)
     content.writerow(['uid', 'cid', 'score'])
     for user, vedio, score in zip(u_indices, v_indices, labels):

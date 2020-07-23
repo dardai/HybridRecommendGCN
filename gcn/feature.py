@@ -468,9 +468,9 @@ def makeFeature():
         other_index = course_feature[index] - 1
         course_features[index][other_index] = 1
 
-    print(user_feature)
-    print('----------------')
-    print(course_features)
+    #print(user_feature)
+    #print('----------------')
+    #print(course_features)
 
     return user_feature, course_features
 

@@ -1,16 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-#print(sys.path)
-project = '\\Desktop\\HybridRecommendGCN'  # 工作项目根目录
-sys.path.append(os.getcwd().split(project)[0] + project)
-#print(sys.path)
+
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 
 
 def updateCourseDr():
+    print("run coursePredeal...")
     sql_select_course = '''select user_id,course_id,
         (CASE
         WHEN learning_time>10 THEN 1
@@ -45,10 +41,9 @@ def updateCourseDr():
     dbHandle.changeCloseFlag()
     dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr,
                    insertTuple)
+    print("coursePredeal success")
 
+# def main():
+#    updateCourseDr()
 
-def main():
-    updateCourseDr()
-
-main()
-    
+# main()
