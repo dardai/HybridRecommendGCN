@@ -117,7 +117,7 @@ class elasticsearchPort():
         return True, insertErrorList
 
     def searchByContext(self, context, params = None):
-        body
+        body = {}
         if isinstance(context, str):
             body = ESBody[ESBodyType.SearchOneWord]
             body['query']['match']['title'] = context

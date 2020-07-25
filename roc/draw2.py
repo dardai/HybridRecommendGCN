@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 import numpy as nm
 import pandas as pd
-from scipy import interpolate
+import datetime
+
 
 def drawBigraphRoc():
     #读取从二部图中保存的矩阵
@@ -51,6 +52,7 @@ def drawGcnRoc():
 
 
     datalist = source_data.values.tolist()
+    print(datalist)
     dr = []
     course=[]
     user=[]
@@ -71,6 +73,7 @@ def drawGcnRoc():
         改uid映射
     '''
     uid = source_data.uid.tolist()
+
     # for i in range(len(uid)):
     #     uid[i] = gcn_u_dictr[uid[i]]
 
@@ -82,11 +85,12 @@ def drawGcnRoc():
         改cid映射
     '''
     cid = source_data.cid.tolist()
+
     # for i in range(len(cid)):
     #     cid[i] = gcn_v_dictr[cid[i]]
 
     for i in range(len(cid)):
-        cid[i] = bg_v_dict[cid[i]]
+        cid [i] = bg_v_dict[cid[i]]
 
 
     #从二部图的输入取对应真实值
@@ -106,7 +110,7 @@ def drawGcnRoc():
     # nm.savetxt("rg.txt", realList, delimiter=',')
 
     #预测值矩阵构造
-    predict = nm.zeros(realGraph.shape)
+    predict = nm.zeros((realGraph.shape))
     for i in range(dr_length):
         predict[cid[i],uid[i]] = dr[i]
     print(predict)
@@ -138,24 +142,52 @@ def drawGcnRoc():
 
     roc_auc = auc(fpr, tpr)
     print("AUC=", roc_auc)
-    #绘制ROC曲线
-    print("draw ROC(GCN)")
+
+    # #读取参数
+    # ad = pd.read_csv('roc/arg.csv')
+    # adl = []
+    # for i in range(len(ad)):
+    #     adl.append(ad['0'][i])
+
+
+    # 绘制ROC曲线
     lw = 2
     plt.figure(figsize=(8, 5))
 
     plt.plot(fpr, tpr, color='darkorange',
-             lw=lw, label='ROC curve (area = %0.4f)' % roc_auc)
+             lw=lw, label='ROC curve (area = %0.8f)' % roc_auc)
     plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC for HybridRecommend')
+    plt.title('ROC for HybridRecommend(0.8:0.2)')
+    #plt.title('ROC for Gcn(0.6:0.4)')
     plt.legend(loc="lower right")
+
+    # #显示参数
+    # plt.text(0.45,0.35,'learning_rate= ')
+    # plt.text(0.45, 0.3, 'epoch= ')
+    # plt.text(0.45, 0.25, 'hidden= ')
+    # plt.text(0.45, 0.2, 'feat_hidden= ')
+    # plt.text(0.45, 0.15, 'dropout= ')
+    # plt.text(0.45, 0.1, 'summaries_dir= ')
+    #
+    # plt.text(0.62, 0.35, adl[0],color = 'r')
+    # plt.text(0.55, 0.3, adl[1],color = 'r')
+    # plt.text(0.55, 0.25, adl[2],color = 'r')
+    # plt.text(0.60, 0.2, adl[3],color = 'r')
+    # plt.text(0.55, 0.15,adl[4],color = 'r')
+    # plt.text(0.63, 0.1, adl[5],color = 'r')
+    date = datetime.datetime.now()
+    # #存为图片
+    now = date.strftime("%Y-%m-%d-%H_%M_%S")
+    dir = 'roc/exp/'+now+'.png'
+    plt.savefig(dir)
     plt.show()
 
 
 def Main():
 
-    drawBigraphRoc()
+    #drawBigraphRoc()
     drawGcnRoc()

@@ -5,11 +5,11 @@ from roc import courseRecommend2 as cR2
 from roc import draw2
 from bigraph import cR3
 import pandas as pd
+from bigraph import courseRecommend as cR
 if __name__ == '__main__':
     print('test')
     #updateCourseDr()
     #cR.Main()
-    #cR2.Main()
     draw2.Main()
 
 
