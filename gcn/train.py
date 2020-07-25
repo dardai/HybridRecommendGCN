@@ -34,8 +34,8 @@ tf.set_random_seed(seed)
 
 # Settings
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", type=str, default="FSL",
-                choices=['FSL', 'ml_1m', 'ml_10m', 'douban', 'yahoo_music', 'flixster'],
+ap.add_argument("-d", "--dataset", type=str, default="fshl",
+                choices=['fshl', 'ml_1m', 'ml_10m', 'douban', 'yahoo_music', 'flixster'],
                 help="Dataset string.")
 
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
@@ -120,32 +120,14 @@ ACCUM = args['accumulation']
 SELFCONNECTIONS = False
 SPLITFROMFILE = True
 VERBOSE = True
-
-if DATASET == 'ml_1m' or DATASET == 'FSL' or DATASET == 'douban':
+# if DATASET == 'ml_1m' or DATASET == 'fshl' or DATASET == 'douban':
+if DATASET == 'fshl':
     NUMCLASSES = 5
-elif DATASET == 'ml_10m':
-    NUMCLASSES = 10
-    print('\n WARNING: this might run out of RAM, consider using train_minibatch.py for dataset %s' % DATASET)
-    print('If you want to proceed with this option anyway, uncomment this.\n')
-    sys.exit(1)
-elif DATASET == 'flixster':
-    NUMCLASSES = 10
-elif DATASET == 'yahoo_music':
-    NUMCLASSES = 71
-    if ACCUM == 'sum':
-        print('\n WARNING: combining DATASET=%s with ACCUM=%s can cause memory issues due to large number of classes.')
-        print('Consider using "--accum stack" as an option for this dataset.')
-        print('If you want to proceed with this option anyway, uncomment this.\n')
-        sys.exit(1)
 
 # Splitting dataset in training, validation and test set
 
-if DATASET == 'ml_1m' or DATASET == 'ml_10m':
-    if FEATURES:
-        datasplit_path = 'data/' + DATASET + '/withfeatures_split_seed' + str(DATASEED) + '.pickle'
-    else:
-        datasplit_path = 'data/' + DATASET + '/split_seed' + str(DATASEED) + '.pickle'
-elif FEATURES:
+
+if FEATURES:
     datasplit_path = 'data/' + DATASET + '/withfeatures.pickle'
 else:
     datasplit_path = 'data/' + DATASET + '/nofeatures.pickle'
@@ -155,7 +137,7 @@ if DATASET == 'flixster' or DATASET == 'douban' or DATASET == 'yahoo_music':
         val_labels, val_u_indices, val_v_indices, test_labels, \
         test_u_indices, test_v_indices, class_values = load_data_monti(DATASET, TESTING)
 
-elif DATASET == 'FSL':
+elif DATASET == 'fshl':
     print("Using official MovieLens dataset split u1.base/u1.test with 20% validation set size...")
     u_features, v_features, adj_train, train_labels, train_u_indices, \
         train_v_indices, val_labels, val_u_indices, val_v_indices, \

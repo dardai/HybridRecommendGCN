@@ -32,7 +32,7 @@ tf.set_random_seed(seed)
 # Settings
 ap = argparse.ArgumentParser()
 #去掉其他数据集选择
-ap.add_argument("-d", "--dataset", type=str, default="ml_100k",
+ap.add_argument("-d", "--dataset", type=str, default="fshl",
                 help="Dataset string.")
 
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,

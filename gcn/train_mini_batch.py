@@ -30,7 +30,9 @@ tf.set_random_seed(seed)
 
 # Settings
 ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", type=str, default="ml_1m", choices=['ml_100k', 'ml_1m', 'ml_10m'],
+# ap.add_argument("-d", "--dataset", type=str, default="ml_1m", choices=['ml_100k', 'ml_1m', 'ml_10m'],
+#                 help="Dataset string.")
+ap.add_argument("-d", "--dataset", type=str, default="ml_1m", choices=['fshl', 'ml_1m', 'ml_10m'],
                 help="Dataset string.")
 
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
@@ -55,7 +57,7 @@ ap.add_argument("-ds", "--data_seed", type=int, default=1234,
                 help="Seed used to shuffle data in data_utils, taken from cf-nade (1234, 2341, 3412, 4123, 1324)")
 
 ap.add_argument("-sdir", "--summaries_dir", type=str, default='logs/' + str(datetime.datetime.now()).replace(' ', '_'),
-                help="Dataset string ('ml_100k', 'ml_1m')")
+                help="Dataset string ('fshl', 'ml_1m')")
 
 ap.add_argument("-bs", "--batch_size", type=int, default=10000,
                 help="Batch size used for batching loss function contributions.")
@@ -114,18 +116,17 @@ ACCUM = args['accumulation']
 SELFCONNECTIONS = False
 SPLITFROMFILE = True
 VERBOSE = True
-if DATASET == 'ml_1m' or DATASET == 'ml_100k':
+
+# if DATASET == 'ml_1m' or DATASET == 'fshl':
+if  DATASET == 'fshl':
     NUMCLASSES = 5
-elif DATASET == 'ml_10m':
-    NUMCLASSES = 10
 else:
     raise ValueError('Invalid choice of dataset: %s' % DATASET)
 
 # Splitting dataset in training, validation and test set
 
-if DATASET == 'ml_1m' or DATASET == 'ml_10m':
-    datasplit_path = 'data/' + DATASET + '/split_seed' + str(DATASEED) + '.pickle'
-elif DATASET == 'ml_100k':
+
+if DATASET == 'fshl':
     datasplit_path = 'data/' + DATASET + '/nofeatures.pickle'
 
 

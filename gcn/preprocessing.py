@@ -156,10 +156,9 @@ def create_trainvaltest_split(dataset, seed=1234, testing=False, datasplit_path=
 
     # number of test and validation edges
     num_test = int(np.ceil(ratings.shape[0] * 0.1))
-    if dataset == 'ml_100k':
+    if dataset == 'fshl':
         num_val = int(np.ceil(ratings.shape[0] * 0.9 * 0.05))
-    else:
-        num_val = int(np.ceil(ratings.shape[0] * 0.9 * 0.05))
+
 
     num_train = ratings.shape[0] - num_val - num_test
 
@@ -526,7 +525,7 @@ def load_official_trainvaltest_split(dataset, testing=False):
 
     class_values = np.sort(np.unique(ratings))
 
-    if dataset == 'ml_100k':
+    if dataset == 'fshl':
         '''
         # movie features (genres)
         sep = r'|'
@@ -569,60 +568,6 @@ def load_official_trainvaltest_split(dataset, testing=False):
                 u_features[u_dict[u_id], occupation_dict[row['occupation']]] = 1.
         '''
         u_features, v_features = makeFeature()
-    elif dataset == 'ml_1m':
-
-        # load movie features
-        movies_file = 'data/' + dataset.replace('_', '-') + '/movies.dat'
-
-        movies_headers = ['movie_id', 'title', 'genre']
-        movies_df = pd.read_csv(movies_file, sep=sep, header=None,
-                                names=movies_headers, engine='python')
-
-        # extracting all genres
-        genres = []
-        for s in movies_df['genre'].values:
-            genres.extend(s.split('|'))
-
-        genres = list(set(genres))
-        num_genres = len(genres)
-
-        genres_dict = {g: idx for idx, g in enumerate(genres)}
-
-        # creating 0 or 1 valued features for all genres
-        v_features = np.zeros((num_items, num_genres), dtype=np.float32)
-        for movie_id, s in zip(movies_df['movie_id'].values.tolist(), movies_df['genre'].values.tolist()):
-            # check if movie_id was listed in ratings file and therefore in mapping dictionary
-            if movie_id in v_dict.keys():
-                gen = s.split('|')
-                for g in gen:
-                    v_features[v_dict[movie_id], genres_dict[g]] = 1.
-
-        # load user features
-        users_file = 'data/' + dataset.replace('_', '-') + '/users.dat'
-        users_headers = ['user_id', 'gender', 'age', 'occupation', 'zip-code']
-        users_df = pd.read_csv(users_file, sep=sep, header=None,
-                               names=users_headers, engine='python')
-
-        # extracting all features
-        cols = users_df.columns.values[1:]
-
-        cntr = 0
-        feat_dicts = []
-        for header in cols:
-            d = dict()
-            feats = np.unique(users_df[header].values).tolist()
-            d.update({f: i for i, f in enumerate(feats, start=cntr)})
-            feat_dicts.append(d)
-            cntr += len(d)
-
-        num_feats = sum(len(d) for d in feat_dicts)
-
-        u_features = np.zeros((num_users, num_feats), dtype=np.float32)
-        for _, row in users_df.iterrows():
-            u_id = row['user_id']
-            if u_id in u_dict.keys():
-                for k, header in enumerate(cols):
-                    u_features[u_dict[u_id], feat_dicts[k][row[header]]] = 1.
     else:
         raise ValueError('Invalid dataset option %s' % dataset)
 

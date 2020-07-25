@@ -70,10 +70,9 @@ def download_dataset(dataset, files, data_dir):
 
 
         print('Downloading %s dataset' % dataset)
-        if dataset in ['ml_100k', 'ml_1m']:
+        # if dataset in ['ml_100k', 'ml_1m']:
+        if dataset in ['fshl']:
             target_dir = 'data/' + dataset.replace('_', '-')
-        elif dataset == 'ml_10m':
-            target_dir = 'data/' + 'ml-10M100K'
         else:
             raise ValueError('Invalid dataset option %s' % dataset)
 
@@ -136,7 +135,7 @@ def load_data(fname, seed=1234, verbose=True):
 
     data_dir = 'data/' + fname
 
-    if fname == 'ml_100k':
+    if fname == 'fshl':
 
         # Check if files exist and download otherwise
         files = ['/u.data', '/u.item', '/u.user']
@@ -220,130 +219,6 @@ def load_data(fname, seed=1234, verbose=True):
         u_features = sp.csr_matrix(u_features)
         v_features = sp.csr_matrix(v_features)
 
-    elif fname == 'ml_1m':
-
-        # Check if files exist and download otherwise
-        files = ['/ratings.dat', '/movies.dat', '/users.dat']
-        download_dataset(fname, files, data_dir)
-
-        sep = r'\:\:'
-        filename = data_dir + files[0]
-
-        dtypes = {
-            'u_nodes': np.int64, 'v_nodes': np.int64,
-            'ratings': np.float32, 'timestamp': np.float64}
-
-        # use engine='python' to ignore warning about switching to python backend when using regexp for sep
-        data = pd.read_csv(filename, sep=sep, header=None,
-                           names=['u_nodes', 'v_nodes', 'ratings', 'timestamp'], converters=dtypes, engine='python')
-
-        # shuffle here like cf-nade paper with python's own random class
-        # make sure to convert to list, otherwise random.shuffle acts weird on it without a warning
-        data_array = data.as_matrix().tolist()
-        random.seed(seed)
-        random.shuffle(data_array)
-        data_array = np.array(data_array)
-
-        u_nodes_ratings = data_array[:, 0].astype(dtypes['u_nodes'])
-        v_nodes_ratings = data_array[:, 1].astype(dtypes['v_nodes'])
-        ratings = data_array[:, 2].astype(dtypes['ratings'])
-
-        u_nodes_ratings, u_dict, num_users = map_data(u_nodes_ratings)
-        v_nodes_ratings, v_dict, num_items = map_data(v_nodes_ratings)
-
-        u_nodes_ratings, v_nodes_ratings = u_nodes_ratings.astype(np.int64), v_nodes_ratings.astype(np.int64)
-        ratings = ratings.astype(np.float32)
-
-        # Load movie features
-        movies_file = data_dir + files[1]
-
-        movies_headers = ['movie_id', 'title', 'genre']
-        movies_df = pd.read_csv(movies_file, sep=sep, header=None,
-                                names=movies_headers, engine='python')
-
-        # Extracting all genres
-        genres = []
-        for s in movies_df['genre'].values:
-            genres.extend(s.split('|'))
-
-        genres = list(set(genres))
-        num_genres = len(genres)
-
-        genres_dict = {g: idx for idx, g in enumerate(genres)}
-
-        # Creating 0 or 1 valued features for all genres
-        v_features = np.zeros((num_items, num_genres), dtype=np.float32)
-        for movie_id, s in zip(movies_df['movie_id'].values.tolist(), movies_df['genre'].values.tolist()):
-            # Check if movie_id was listed in ratings file and therefore in mapping dictionary
-            if movie_id in v_dict.keys():
-                gen = s.split('|')
-                for g in gen:
-                    v_features[v_dict[movie_id], genres_dict[g]] = 1.
-
-        # Load user features
-        users_file = data_dir + files[2]
-        users_headers = ['user_id', 'gender', 'age', 'occupation', 'zip-code']
-        users_df = pd.read_csv(users_file, sep=sep, header=None,
-                               names=users_headers, engine='python')
-
-        # Extracting all features
-        cols = users_df.columns.values[1:]
-
-        cntr = 0
-        feat_dicts = []
-        for header in cols:
-            d = dict()
-            feats = np.unique(users_df[header].values).tolist()
-            d.update({f: i for i, f in enumerate(feats, start=cntr)})
-            feat_dicts.append(d)
-            cntr += len(d)
-
-        num_feats = sum(len(d) for d in feat_dicts)
-
-        u_features = np.zeros((num_users, num_feats), dtype=np.float32)
-        for _, row in users_df.iterrows():
-            u_id = row['user_id']
-            if u_id in u_dict.keys():
-                for k, header in enumerate(cols):
-                    u_features[u_dict[u_id], feat_dicts[k][row[header]]] = 1.
-
-        u_features = sp.csr_matrix(u_features)
-        v_features = sp.csr_matrix(v_features)
-
-    elif fname == 'ml_10m':
-
-        # Check if files exist and download otherwise
-        files = ['/ratings.dat']
-        download_dataset(fname, files, data_dir)
-
-        sep = r'\:\:'
-
-        filename = data_dir + files[0]
-
-        dtypes = {
-            'u_nodes': np.int64, 'v_nodes': np.int64,
-            'ratings': np.float32, 'timestamp': np.float64}
-
-        # use engine='python' to ignore warning about switching to python backend when using regexp for sep
-        data = pd.read_csv(filename, sep=sep, header=None,
-                           names=['u_nodes', 'v_nodes', 'ratings', 'timestamp'], converters=dtypes, engine='python')
-
-        # shuffle here like cf-nade paper with python's own random class
-        # make sure to convert to list, otherwise random.shuffle acts weird on it without a warning
-        data_array = data.as_matrix().tolist()
-        random.seed(seed)
-        random.shuffle(data_array)
-        data_array = np.array(data_array)
-
-        u_nodes_ratings = data_array[:, 0].astype(dtypes['u_nodes'])
-        v_nodes_ratings = data_array[:, 1].astype(dtypes['v_nodes'])
-        ratings = data_array[:, 2].astype(dtypes['ratings'])
-
-        u_nodes_ratings, u_dict, num_users = map_data(u_nodes_ratings)
-        v_nodes_ratings, v_dict, num_items = map_data(v_nodes_ratings)
-
-        u_nodes_ratings, v_nodes_ratings = u_nodes_ratings.astype(np.int64), v_nodes_ratings.astype(np.int64)
-        ratings = ratings.astype(np.float32)
 
     else:
         raise ValueError('Dataset name not recognized: ' + fname)
