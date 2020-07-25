@@ -300,7 +300,10 @@ def doBigraph():
     if drawRoc:
         nm.savetxt("roc/bgLocate.txt", locate_split , delimiter=',')
         nm.savetxt("roc/test_graph.txt", test_graph_split, delimiter=',')
-
+        nm.save('user_mdicr.npy', user_mdicr)
+        nm.save('course_mdicr.npy', course_mdicr)
+        nm.save('user_mdic.npy', user_mdic)
+        nm.save('course_mdic.npy', course_mdic)
 
 
 
