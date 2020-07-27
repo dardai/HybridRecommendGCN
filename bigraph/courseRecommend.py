@@ -130,7 +130,8 @@ def dataPreprocessiong():
     data = pd.DataFrame(result)
 
     # 用dcL删除某些结果里没有的课程
-    dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
+    #dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
+    dc = pd.read_csv("roc/toGcn2.csv")
     #dc = pd.read_csv("C:/Users/zyt/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
     dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
     dcL = list(dc['cid'])

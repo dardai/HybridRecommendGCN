@@ -24,7 +24,9 @@ def saveBgInputMartix(data,user_mdicr):
     for i in range(len(data)):
         realGraph[[course_mdic_new[courseListNew[i]]], user_mdic_new[userListNew[i]]] = 1
 
-    nm.savetxt('C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/realGraph.txt', realGraph)
+    # nm.savetxt('C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/realGraph.txt', realGraph)
+    nm.savetxt('roc/realGraph.txt', realGraph)
+
     nm.save('user_mdic_new.npy', user_mdic_new)
     nm.save('course_mdic_new.npy', course_mdic_new)
 
@@ -97,7 +99,10 @@ def rocLocate(data,course_length,user_length,dr_length,course_mdic):
     # 求各个用户的资源分配矩阵
     locate = nm.matmul(weights, train_rated_graph)
 
-    nm.savetxt("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/bgLocate.txt", locate, delimiter=',')
-    nm.savetxt("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/test_graph.txt", test_graph, delimiter=',')
+    # nm.savetxt("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/bgLocate.txt", locate, delimiter=',')
+    # nm.savetxt("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/test_graph.txt", test_graph, delimiter=',')
+
+    nm.savetxt("roc/bgLocate.txt", locate, delimiter=',')
+    nm.savetxt("roc/test_graph.txt", test_graph, delimiter=',')
 
 

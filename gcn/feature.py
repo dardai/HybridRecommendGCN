@@ -477,8 +477,8 @@ def makeFeature():
 
 def getAllUserAndCourse():
     u_nodes, v_nodes, ratings = [], [], []
-
-    with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
+    with open('gcn/toGcn.csv', 'r') as f:
+    # with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))
