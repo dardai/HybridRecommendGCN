@@ -2,7 +2,6 @@
 # -*- coding:utf-8 -*-
 
 import pandas as pd
-import numpy as np
 
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
@@ -38,11 +37,11 @@ def differFusion(d):
         uclist.append(temp)
 
     # print uclist
-    allData = pd.read_csv('../gcn/toGcn.csv', names=['uid', 'cid', 'value'])
+    allData = pd.read_csv('../gcn/resultToRoc.csv')
     auid = allData['uid'].values.tolist()
     acid = allData['cid'].values.tolist()
-    avalue = allData['value'].values.tolist()
-
+    avalue = allData['score'].values.tolist()
+    print uclist
     # 从全量数据和增量数据中匹配交互过相同类别课程的目标用户，并对该目标用户在全量数据中与增量数据中类别相匹配的课程的推荐值增加0.2
     # 如果对一个目标用户，增量数据里面有全量数据中没有交互过的类别，那不算它，只给交互过的类别增加0.2
     for i in range(len(uclist)):
