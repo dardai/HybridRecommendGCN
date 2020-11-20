@@ -179,6 +179,12 @@ def storeData(recommend_result):
     myfile = codecs.open("changedBigraph.csv", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     df = pd.DataFrame(result_data)
+
+    #在设置的时间内没有新增交互数据
+    if df.empty:
+        print "no changed data"
+        return
+
     df = df.drop(2,axis=1)
     df.sort_values([0,3],ascending = [1,0],inplace=True)
     grouped = df.values.tolist()

@@ -59,5 +59,6 @@ def fusion():
     else:
         #增量数据与离线全量数据中没有相同的用户-课程对，不进行融合
         fusionData = differAllData
+        print ("no changed data , no fusion..")
 
     fusionData.to_csv('online.csv', header=None, index=None)
