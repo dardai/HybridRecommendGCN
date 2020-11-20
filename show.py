@@ -19,7 +19,8 @@ def Main():
     data, learned, course_mdic, course_mdicr, \
     user_mdic, user_mdicr, dr_length, course_length, \
     user_length, courseList = dataPreprocessiong()
-    gcn_result = pd.read_csv('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/resultToRoc.csv',encoding='unicode_escape')
+    # gcn_result = pd.read_csv('./OutputFusion/outputFusion.csv', encoding='unicode_escape', names=['uid', 'cid', 'score'])
+    gcn_result = pd.read_csv('./gcn/resultToRoc.csv', encoding='unicode_escape')
     gcn_uid = gcn_result.uid.tolist()
     gcn_cid = gcn_result.cid.tolist()
     gcn_score = gcn_result.score.tolist()

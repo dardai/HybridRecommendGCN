@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import MySQLdb
+import pymysql as MySQLdb
 from globalConst import DataBaseOperateType, DataBaseInfo
+
+MySQLdb.install_as_MySQLdb()
 
 
 class DatabaseIo:
