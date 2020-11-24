@@ -101,12 +101,11 @@ def get_course_num(y):
     for row in users:
         if int(row[0]) not in course_num:
             course_num[int(row[0])] = [int(y / 2), (y - y / 2), 0]
-    print(len(course_num))
     result = sort_by_key(course_num)
     return result
 
 def get_online_result():
-    online = pd.read_csv('../online/online.csv', names=['uid', 'cid', 'value'])
+    online = pd.read_csv('online/online.csv', names=['uid', 'cid', 'value'])
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x : x[2], reverse = True)
     return result
@@ -142,9 +141,9 @@ def fusion(y):
                 temp_courses[popular_course[i][0]] = 1
 
 
-        num = y - len(temp_courses)
+        high_score_num = y - len(temp_courses)
         for i in range(len(high_score_course)):
-            if high_score_count == num:
+            if high_score_count == high_score_num:
                 break
             elif high_score_course[i][0] not in temp_courses:
                 high_score_count = high_score_count + 1
@@ -154,14 +153,24 @@ def fusion(y):
         for key in temp_courses:
             temp = [row[0], key, temp_courses[key]]
             result.append(temp)
-
+    result = sorted(result, key = lambda k : k[2], reverse = True)
     print(len(result))
     result_dataframe = DataFrame(result)
     result_dataframe.to_csv('outputFusion.csv', index = None, header = None)
     return result_dataframe
 
-
-f = fusion(y=30)
-
-
+def format_result(userid, y):
+    recommend_num = y
+    result_dataframe = fusion(recommend_num)
+    result_list = result_dataframe.values.tolist()
+    data = []
+    for row in result_list:
+        temp_dict = {}
+        if row[0] == userid:
+            #print(row[0])
+            #print(userid)
+            temp_dict["courseId"] = str(row[1])
+            temp_dict["recommendWays"] = str(row[2])
+            data.append(temp_dict)
+    return data
 
