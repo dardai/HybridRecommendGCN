@@ -10,11 +10,12 @@ from resultFusion import fusion
 
 #设定秒数
 changedTime =30
-d = time.time()
-d = d-changedTime
-d = datetime.datetime.fromtimestamp(d)
-
-updateCourseDrChanged(d)
-differFusion(d)
-bigraphChangedMain()
-fusion()
+while True:
+    d = time.time()
+    d = d - changedTime
+    d = datetime.datetime.fromtimestamp(d)
+    updateCourseDrChanged(d)
+    differFusion(d)
+    bigraphChangedMain()
+    fusion()
+    time.sleep(changedTime)
