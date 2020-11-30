@@ -17,6 +17,7 @@ def fusion():
 
     #找出两个df中uid和cid对相同的行，存到mergeData中
     mergeData = pd.merge(differAllData,changedData,on=['uid','cid'],how='inner')
+    print mergeData
 
     if not mergeData.empty:
         muid = mergeData['uid'].values.tolist()
@@ -29,9 +30,15 @@ def fusion():
                     WHERE user_id = '{0}'
                     AND course_id = '{1}'
                     '''
+
             result = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                     sql=sql_select_click_times.format(muid[i],mcid[i]))
-            ct_list.append(float(result[0][0]))
+            if not result:
+                ct_list.append(0)
+            else:
+                ct_list.append(float(result[0][0]))
+
+
         cmax = max(ct_list)
         #norm_ctlist为ct_list进行规范化后的结果，作为惩罚因子加到对应的推荐值上
         norm_ctlist = []
