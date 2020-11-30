@@ -69,3 +69,4 @@ def fusion():
         print ("no changed data , no fusion..")
 
     fusionData.to_csv('online.csv', header=None, index=None)
+    return fusionData
