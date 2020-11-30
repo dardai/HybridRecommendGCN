@@ -37,7 +37,7 @@ def differFusion(d):
         uclist.append(temp)
 
     # print uclist
-    allData = pd.read_csv('../gcn/resultToRoc.csv')
+    allData = pd.read_csv('gcn/resultToRoc.csv')
     auid = allData['uid'].values.tolist()
     acid = allData['cid'].values.tolist()
     avalue = allData['score'].values.tolist()

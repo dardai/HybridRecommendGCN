@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
+from online.onlineRecommend import online_run
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, SetType
 import pandas as pd
 import numpy as np
 from pandas.core.frame import DataFrame
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 # 按值对字典进行降序排序，输出列表结果
+from utils.extends import formatDataByType, makeDic
+
+
 def sort_by_value(dic):
     return sorted(dic.items(), key = lambda k : k[1], reverse = True)
 
@@ -105,7 +112,8 @@ def get_course_num(y):
     return result
 
 def get_online_result():
-    online = pd.read_csv('online/online.csv', names=['uid', 'cid', 'value'])
+    #online = pd.read_csv('../online/online.csv', names=['uid', 'cid', 'value'])
+    online = online_run()
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x : x[2], reverse = True)
     return result
@@ -159,10 +167,29 @@ def fusion(y):
     result_dataframe.to_csv('outputFusion.csv', index = None, header = None)
     return result_dataframe
 
+def get_course_name(value, courseList):
+    for row in courseList:
+        if row[0] == value:
+            return row[1]
+
+def get_couse_info():
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+    sql_course = "select id , course_name from course_info"
+    result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                   sql=sql_course)
+    dbHandle.changeCloseFlag()
+    #print("len(result_course) = {}".format(len(result_course)))
+    courseList = formatDataByType(SetType.SetType_List, result_course)
+    #print(courseList)
+    return courseList
+
 def format_result(userid, y):
     recommend_num = y
     result_dataframe = fusion(recommend_num)
     result_list = result_dataframe.values.tolist()
+    courseList = get_couse_info()
     data = []
     for row in result_list:
         temp_dict = {}
@@ -170,7 +197,10 @@ def format_result(userid, y):
             #print(row[0])
             #print(userid)
             temp_dict["courseId"] = str(row[1])
+            temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
             temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
+    print(data)
     return data
 
+#format_result(1096233521229710000, 30)
