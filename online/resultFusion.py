@@ -49,7 +49,7 @@ def fusion():
         # fvalue为dvalue、cvalue和惩罚因子norm_ctlist融合后的推荐值
         dvalue = mergeData['score_x'].values.tolist()
         cvalue = mergeData['score_y'].values.tolist()
-        fvalue = map(lambda(a,b,c):a*0.3+b+c,zip(cvalue,dvalue,norm_ctlist))
+        fvalue = map(lambda(a,b,c):a*1+b+c,zip(cvalue,dvalue,norm_ctlist))
 
         #mergeData增量数据变为进行融合后的结果集
         mergeData.drop(['score_x','score_y'],axis=1,inplace=True)
@@ -69,4 +69,6 @@ def fusion():
         print ("no changed data , no fusion..")
 
     fusionData.to_csv('online.csv', header=None, index=None)
+    fusionData.to_csv('gcn/resultToRoc.csv',index=None)
+
     return fusionData
