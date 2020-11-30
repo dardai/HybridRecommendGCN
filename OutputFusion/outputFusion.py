@@ -4,6 +4,8 @@ from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, SetType
 import pandas as pd
 import numpy as np
+#np.set_printoptions(suppress=True, threshold=np.nan)
+pd.set_option('float_format', lambda x: '%.3f' % x)
 from pandas.core.frame import DataFrame
 import sys
 reload(sys)
@@ -30,7 +32,13 @@ def get_user_course():
     result_user_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_user_course)
 
+    sql_user_course_changed = "select user_id, course_id, click_times, score from user_course_changed"
+    result_user_course_changed = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                        sql=sql_user_course_changed)
     dbHandle.changeCloseFlag()
+
+    result_user_course = list(result_user_course)+list(result_user_course_changed)
+
     return result_user_course
 
 # 获取所有用户的id
@@ -112,8 +120,8 @@ def get_course_num(y):
     return result
 
 def get_online_result():
-    #online = pd.read_csv('../online/online.csv', names=['uid', 'cid', 'value'])
-    online = online_run()
+    online_run()
+    online = pd.read_csv('online.csv', names=['uid', 'cid', 'value']).astype(str)
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x : x[2], reverse = True)
     return result
@@ -133,36 +141,33 @@ def fusion(y):
         for online_row in online_result:
             if online_count == row[1][2]:
                 break
-            elif int(online_row[0]) == row[0]:
-                if int(online_row[1]) not in temp_courses:
+            elif long(online_row[0]) == row[0]:
+                if long(online_row[1]) not in temp_courses.keys():
                     online_count = online_count + 1
-                    temp_courses[int(online_row[1])] = 3
+                    temp_courses[int(online_row[1])] = online_row[2]
 
 
         popular_num = int((y - len(temp_courses))/2)
-        #if popular_num > 0:
         for i in range(len(popular_course)):
             if popular_count == popular_num:
                 break
-            elif popular_course[i][0] not in temp_courses:
-                popular_count = popular_count + 1
-                temp_courses[popular_course[i][0]] = 1
+            elif popular_course[i][0] not in temp_courses.keys():
 
+                popular_count = popular_count + 1
+                temp_courses[popular_course[i][0]] = -2
 
         high_score_num = y - len(temp_courses)
         for i in range(len(high_score_course)):
             if high_score_count == high_score_num:
                 break
-            elif high_score_course[i][0] not in temp_courses:
+            elif high_score_course[i][0] not in temp_courses.keys():
                 high_score_count = high_score_count + 1
-                temp_courses[high_score_course[i][0]] = 2
-
+                temp_courses[high_score_course[i][0]] = -1
 
         for key in temp_courses:
             temp = [row[0], key, temp_courses[key]]
             result.append(temp)
     result = sorted(result, key = lambda k : k[2], reverse = True)
-    print(len(result))
     result_dataframe = DataFrame(result)
     result_dataframe.to_csv('outputFusion.csv', index = None, header = None)
     return result_dataframe
@@ -180,9 +185,7 @@ def get_couse_info():
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     dbHandle.changeCloseFlag()
-    #print("len(result_course) = {}".format(len(result_course)))
     courseList = formatDataByType(SetType.SetType_List, result_course)
-    #print(courseList)
     return courseList
 
 def format_result(userid, y):
@@ -194,13 +197,13 @@ def format_result(userid, y):
     for row in result_list:
         temp_dict = {}
         if row[0] == userid:
-            #print(row[0])
-            #print(userid)
             temp_dict["courseId"] = str(row[1])
             temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
+            if float(row[2])> 5:
+                print 1
+                row[2] = 5
             temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
     print(data)
     return data
 
-#format_result(1096233521229710000, 30)
