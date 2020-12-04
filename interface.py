@@ -44,7 +44,7 @@ class ServerHTTP(BaseHTTPRequestHandler):
         datas["status"] = 200
         datas["message"] = "OK"
         datas["data"] = results
-        datas = json.dumps(datas)
+        datas = json.dumps(datas, ensure_ascii=False)
 
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -52,10 +52,12 @@ class ServerHTTP(BaseHTTPRequestHandler):
         self.end_headers()
         buf = '''<!DOCTYPE HTML>
         <html>
-            <head><title>Post page</title></head>
+            <head><meta charset="utf-8">
+            <title>Post page</title>
+            </head>
             <body>Post Data:%s <br />Path:%s</body>
         </html>'''%(datas, self.path)
-        self.wfile.write(datas)
+        self.wfile.write(buf)
 
 def start_server(port):
     http_server = HTTPServer(('', int(port)), ServerHTTP)

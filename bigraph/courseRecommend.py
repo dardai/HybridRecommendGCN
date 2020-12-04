@@ -31,7 +31,7 @@ from roc.rocUtils import saveBgInputMartix,rocLocate
 from bgUtils import storeDataAsGCNInput
 
 # 定义将多条数据存入数据库操作
-drawRoc = True
+drawRoc = False
 getGcnInput = True
 # 输入：由pysaprk中的行矩阵rdd转换成的列表，形如
 # [ DenseMatrix[1,1,1], DenseMatrix[1,1,1], DenseMatrix[1,1,1] ]
@@ -74,9 +74,11 @@ def getDataFromDB():
     if not dbHandle:
         return None
 
-    sql_dr = """select *          from course_dr"""
-    sql_course = "select id , system_course_id ,course_name from course_info"
-    sql_user = """select user_id from user_basic_info"""
+    sql_dr = """SELECT * FROM course_dr"""
+    #sql_course = "select id , system_course_id ,course_name from course_info"
+    sql_course = """select id, name from course5000"""
+    #sql_user = """select user_id from user_basic_info"""
+    sql_user = """select id from account5000"""
 
     result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_dr)
@@ -85,6 +87,7 @@ def getDataFromDB():
     dbHandle.changeCloseFlag()
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                  sql=sql_user)
+
 
     print("len(result_dr) = {}, len(result_user) = {},\
           len(result_course) = {}".format(len(result_dr),
@@ -98,7 +101,8 @@ def getDataFromDB():
 def get_keys(value, courseList):
     for row in courseList:
         if row[0] == value:
-            return row[2]
+            #return row[2]
+            return row[1]
 
 
 def dataPreprocessiong():
@@ -118,6 +122,7 @@ def dataPreprocessiong():
     result, learned = [], []
     for dr in drList:
         temp_result, temp_learned = [], []
+        #print dr[0]
         temp_result.append(user_mdic[dr[0]] + 1)
         temp_result.append(dr[1])
         temp_result.append(dr[2] * 5)
@@ -129,20 +134,20 @@ def dataPreprocessiong():
 
     data = pd.DataFrame(result)
 
-    # 用dcL删除某些结果里没有的课程
-    #dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
-    dc = pd.read_csv("roc/toGcn2.csv")
-    #dc = pd.read_csv("C:/Users/zyt/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
-    dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
-    dcL = list(dc['cid'])
-    #去重
-    data.drop_duplicates(subset=[0, 1], keep='first', inplace=True)
-    data.reset_index(inplace=True)
-    # 删除结果里没有的课程
-    for i in range(len(data)):
-        if data[1][i] not in dcL:
-            data.drop(i, axis=0, inplace=True)
-    data.drop('index', axis=1, inplace=True)
+    # # 用dcL删除某些结果里没有的课程
+    # #dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
+    # dc = pd.read_csv("roc/toGcn2.csv")
+    # #dc = pd.read_csv("C:/Users/zyt/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
+    # dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
+    # dcL = list(dc['cid'])
+    # #去重
+    # data.drop_duplicates(subset=[0, 1], keep='first', inplace=True)
+    # data.reset_index(inplace=True)
+    # # 删除结果里没有的课程
+    # for i in range(len(data)):
+    #     if data[1][i] not in dcL:
+    #         data.drop(i, axis=0, inplace=True)
+    # data.drop('index', axis=1, inplace=True)
 
     if drawRoc:
         saveBgInputMartix(data,user_mdicr)
@@ -352,4 +357,4 @@ def Main():
             print(tb)
 
 
-#bigraphMain()
+bigraphMain()

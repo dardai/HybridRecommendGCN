@@ -8,9 +8,9 @@ import pandas as pd
 #筛选增量数据
 def getChangedData(d):
 
-    sql_select_course = '''select user_id,course_id
-            FROM user_course_changed
-            WHERE learning_time > 10
+    sql_select_course = '''select account_id,course_id
+            FROM account_course5000
+            WHERE duration > 10
             AND UNIX_TIMESTAMP(update_time) > UNIX_TIMESTAMP('{0}')
             '''.format(d)
 
@@ -27,23 +27,41 @@ def getChangedData(d):
 def updateCourseDrChanged(d):
     print("update courseDrChanged...")
 
-    sql_select_course = '''select user_id,course_id,
-        (CASE
-        WHEN learning_time>10 THEN 1
-        ELSE 0 END)as time,
-        CASE collect_status
-        WHEN 'YES' THEN 1 ELSE 0 END AS collect,
-        CASE commit_status
-        WHEN 'YES' THEN 1.5 ELSE 0 END AS commit_status,
-        CASE
-        WHEN score>50 THEN 1 ELSE 0 END AS score
-        FROM user_course_changed
-        WHERE learning_time > 10
-        AND UNIX_TIMESTAMP(update_time) > UNIX_TIMESTAMP('{0}')'''.format(d)
+    # sql_select_course = '''select user_id,course_id,
+    #     (CASE
+    #     WHEN learning_time>10 THEN 1
+    #     ELSE 0 END)as time,
+    #     CASE collect_status
+    #     WHEN 'YES' THEN 1 ELSE 0 END AS collect,
+    #     CASE commit_status
+    #     WHEN 'YES' THEN 1.5 ELSE 0 END AS commit_status,
+    #     CASE
+    #     WHEN score>50 THEN 1 ELSE 0 END AS score
+    #     FROM user_course_changed
+    #     WHERE learning_time > 10
+    #     AND UNIX_TIMESTAMP(update_time) > UNIX_TIMESTAMP('{0}')'''.format(d)
+    #
+    # sql_insert_course_dr_changed = '''INSERT INTO course_dr_changed(user_id, course_id, recommend_value)
+    #                     VALUES (%s, %s, %s)'''
+    # sql_clean_course_dr_changed = 'truncate table course_dr_changed;'
 
-    sql_insert_course_dr_changed = '''INSERT INTO course_dr_changed(user_id, course_id, recommend_value)
+    sql_select_course = '''select account_id,course_id,
+            (CASE
+            WHEN duration>10 THEN 1
+            ELSE 0 END)as time,
+            CASE collect_status
+            WHEN 'YES' THEN 1 ELSE 0 END AS collect,
+            CASE commit_status
+            WHEN 'YES' THEN 1.5 ELSE 0 END AS commit_status,
+            CASE
+            WHEN score>50 THEN 1 ELSE 0 END AS score
+            FROM account_course5000
+            WHERE duration > 10
+            AND UNIX_TIMESTAMP(update_time) > UNIX_TIMESTAMP('{0}')'''.format(d)
+
+    sql_insert_course_dr = '''INSERT INTO course_dr(user_id, course_index, recommend_value)
                         VALUES (%s, %s, %s)'''
-    sql_clean_course_dr_changed = 'truncate table course_dr_changed;'
+    sql_clean_course_dr = 'truncate table course_dr;'
 
     dbHandle = DatabaseIo()
     if not dbHandle:
@@ -60,8 +78,8 @@ def updateCourseDrChanged(d):
 
     insertTuple = tuple(userCourseList)
 
-    dbHandle.doSql(DataBaseOperateType.InsertOne, sql_clean_course_dr_changed)
+    dbHandle.doSql(DataBaseOperateType.InsertOne, sql_clean_course_dr)
     dbHandle.changeCloseFlag()
-    dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr_changed,
+    dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr,
                    insertTuple)
     print("update courseDrChanged success")

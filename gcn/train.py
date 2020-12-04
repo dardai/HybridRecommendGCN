@@ -138,7 +138,7 @@ if DATASET == 'flixster' or DATASET == 'douban' or DATASET == 'yahoo_music':
         test_u_indices, test_v_indices, class_values = load_data_monti(DATASET, TESTING)
 
 elif DATASET == 'fshl':
-    print("Using official MovieLens dataset split u1.base/u1.test with 20% validation set size...")
+    # print("Using official MovieLens dataset split u1.base/u1.test with 20% validation set size...")
     u_features, v_features, adj_train, train_labels, train_u_indices, \
         train_v_indices, val_labels, val_u_indices, val_v_indices, \
         class_values, u_dict, v_dict = new_train_split()
@@ -149,6 +149,8 @@ else:
         test_u_indices, test_v_indices, class_values = create_trainvaltest_split(DATASET, DATASEED, TESTING,
                                                                              datasplit_path, SPLITFROMFILE,
                                                                              VERBOSE)
+#基于实际的评分矩阵设定评分等级数
+NUMCLASSES = class_values.size
 
 num_users, num_items = adj_train.shape
 
@@ -165,8 +167,10 @@ elif FEATURES and u_features is not None and v_features is not None:
     # use features as side information and node_id's as node input features
 
     print("Normalizing feature vectors...")
-    u_features_side = normalize_features(u_features)
-    v_features_side = normalize_features(v_features)
+    # u_features_side = normalize_features(u_features)
+    # v_features_side = normalize_features(v_features)
+    u_features_side = u_features
+    v_features_side = v_features
 
     u_features_side, v_features_side = preprocess_user_item_features(u_features_side, v_features_side)
 
@@ -189,14 +193,20 @@ support = []
 support_t = []
 adj_train_int = sp.csr_matrix(adj_train, dtype=np.int32)
 
-for i in range(NUMCLASSES):
+# for i in range(NUMCLASSES):
+#2020.12.04 暂时换为在class_values中循环
+for i in class_values:
     # build individual binary rating matrices (supports) for each rating
-    support_unnormalized = sp.csr_matrix(adj_train_int == i + 1, dtype=np.float32)
+    # support_unnormalized = sp.csr_matrix(adj_train_int == i + 1, dtype=np.float32)
+    support_unnormalized = sp.csr_matrix(adj_train_int == i, dtype=np.float32)
+    print(support_unnormalized)
+    print(support_unnormalized.nnz)
 
-    if support_unnormalized.nnz == 0 and DATASET != 'yahoo_music':
+    # 2020.12.04暂时注释掉，不然会exit 报错
+    # if support_unnormalized.nnz == 0 and DATASET != 'yahoo_music':
         # yahoo music has dataset split with not all ratings types present in training set.
         # this produces empty adjacency matrices for these ratings.
-        sys.exit('ERROR: normalized bipartite adjacency matrix has only zero entries!!!!!')
+        # sys.exit('ERROR: normalized bipartite adjacency matrix has only zero entries!!!!!')
 
     support_unnormalized_transpose = support_unnormalized.T
     support.append(support_unnormalized)
