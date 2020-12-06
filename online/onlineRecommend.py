@@ -31,6 +31,7 @@ def online_run():
         differFusion(d)
         bigraphChangedMain()
         data = fusion()
-        #time.sleep(changedTime)
-        return data
+        time.sleep(changedTime)
+        #return data
 
+online_run()

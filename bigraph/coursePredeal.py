@@ -7,6 +7,7 @@ from globalConst import DataBaseOperateType
 
 def updateCourseDr():
     print("run coursePredeal...")
+    """
     sql_select_course = '''select user_id,course_id,
         (CASE
         WHEN learning_time>10 THEN 1
@@ -18,6 +19,18 @@ def updateCourseDr():
         CASE
         WHEN score>50 THEN 1 ELSE 0 END AS score
         FROM user_course'''
+    """
+    sql_select_course = '''select account_id,course_id,
+        (CASE
+        WHEN duration>10 THEN 1
+        ELSE 0 END)as time,
+        CASE collect_status
+        WHEN 'YES' THEN 1 ELSE 0 END AS collect,
+        CASE commit_status
+        WHEN 'YES' THEN 1.5 ELSE 0 END AS commit_status,
+        CASE
+        WHEN score>50 THEN 1 ELSE 0 END AS score
+        FROM account_course5000'''
     sql_insert_course_dr = '''INSERT INTO course_dr(user_id, course_index, recommend_value)
                     VALUES (%s, %s, %s)'''
     sql_clean_course_dr = 'truncate table course_dr;'
@@ -32,7 +45,9 @@ def updateCourseDr():
     userCourseList = list()
     for row in result:
         user_id, course_id, time, collect, commit, score = row
+        #user_id, course_id, time, collect, commit = row
         count = (3 * time + 2 * commit + collect + score) / 8
+        #count = (3 * time + 2 * commit + collect) / 7
         userCourseList.append(tuple([user_id, course_id, count]))
 
     insertTuple = tuple(userCourseList)
@@ -47,3 +62,4 @@ def updateCourseDr():
 #    updateCourseDr()
 
 # main()
+updateCourseDr()

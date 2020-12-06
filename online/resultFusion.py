@@ -26,7 +26,7 @@ def fusion():
         ct_list = []
         for i in range(len(muid)):
             sql_select_click_times = '''select click_times
-                    FROM user_course_changed
+                    FROM account_course5000
                     WHERE user_id = '{0}'
                     AND course_id = '{1}'
                     '''
@@ -69,6 +69,6 @@ def fusion():
         print ("no changed data , no fusion..")
 
     fusionData.to_csv('online.csv', header=None, index=None)
-    fusionData.to_csv('gcn/resultToRoc.csv',index=None)
+    fusionData.to_csv('../gcn/resultToRoc.csv',index=None)
 
     return fusionData

@@ -47,9 +47,16 @@ def getEnumValue(enum_type):
 
 
 # -----------------   数据库配置  ---------------------
+# DataBaseInfo = {
+#     "address": "39.100.100.198",
+#     "username": "root",
+#     "passwd": "ASElab905",
+#     "basename": "learningrecommend"
+# }
+
 DataBaseInfo = {
-    "address": "39.100.100.198",
-    "username": "root",
-    "passwd": "ASElab905",
-    "basename": "learningrecommend"
+    "address": "101.133.194.114",
+    "username": "train_rs",
+    "passwd": "Trs123!@#",
+    "basename": "train_recommended_sys"
 }

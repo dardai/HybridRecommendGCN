@@ -17,9 +17,11 @@ def getDataFromDB():
     if not dbHandle:
         return None
 
-    sql_dr = """select *          from course_dr_changed"""
-    sql_course = "select id , system_course_id ,course_name from course_info"
-    sql_user = """select user_id from user_basic_info"""
+    sql_dr = """SELECT * FROM course_dr"""
+    # sql_course = "select id , system_course_id ,course_name from course_info"
+    sql_course = """select id, name from course5000"""
+    # sql_user = """select user_id from user_basic_info"""
+    sql_user = """select id from account5000"""
 
     result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_dr)

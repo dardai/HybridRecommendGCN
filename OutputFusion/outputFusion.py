@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from online.onlineRecommend import online_run
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, SetType
 import pandas as pd
@@ -28,11 +27,11 @@ def get_user_course():
     if not dbHandle:
         return None
 
-    sql_user_course = "select user_id, course_id, click_times, score from user_course"
+    sql_user_course = "select account_id, course_id, click_times, score from account_course5000"
     result_user_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_user_course)
 
-    sql_user_course_changed = "select user_id, course_id, click_times, score from user_course_changed"
+    sql_user_course_changed = "select account_id, course_id, click_times, score from account_course5000"
     result_user_course_changed = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_user_course_changed)
     dbHandle.changeCloseFlag()
@@ -47,7 +46,7 @@ def get_all_users():
     if not dbHandle:
         return None
 
-    sql_user = "select user_id from user_basic_info"
+    sql_user = "select id from account5000"
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_user)
     dbHandle.changeCloseFlag()
@@ -120,7 +119,7 @@ def get_course_num(y):
     return result
 
 def get_online_result():
-    online_run()
+    # online_run()
     online = pd.read_csv('online.csv', names=['uid', 'cid', 'value']).astype(str)
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x : x[2], reverse = True)
@@ -181,7 +180,7 @@ def get_couse_info():
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
-    sql_course = "select id , course_name from course_info"
+    sql_course = "select id , name from course5000"
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     dbHandle.changeCloseFlag()

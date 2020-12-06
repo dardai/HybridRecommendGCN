@@ -22,7 +22,7 @@ def normalize_features(feat):
     if len(degree) == 610:
         pass
     else:
-        degree[degree == 0.] = np.inf
+        degree[degree == 0] = np.inf
 
     degree_inv = 1. / degree
     degree_inv_mat = sp.diags([degree_inv], [0])
@@ -591,7 +591,7 @@ def new_train_split():
     i = 0
     # 注意这里要换用二部图的输出
     #with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
-    with open('toGcn.csv', 'r') as f:
+    with open('../gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))
@@ -745,12 +745,15 @@ def new_train_split():
     # 建立评分向量，并将其变形为矩阵
     rating_mx_train = np.zeros(num_users * num_items, dtype=np.float32)
     rating_mx_train[train_idx] = labels[train_idx].astype(np.float32) + 1.
+
     # 进行矩阵压缩，得到矩阵三元组，即（i, j, Rij）
     rating_mx_train = sp.csr_matrix(rating_mx_train.reshape(num_users, num_items))
+
     # print(rating_mx_train)
 
     # 去重取出评分等级
     class_values = np.sort(np.unique(ratings))
+    print(class_values)
 
     # 根据特征建立用户与课程的描述向量,并稀疏化
     u_features, v_features = makeFeature()

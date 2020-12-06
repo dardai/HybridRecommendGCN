@@ -11,8 +11,8 @@ from gcn.feature import transformCourseType
 
 def differFusion(d):
     print ("run differFusion...")
-    sql_select_differ = '''select course_differ
-                                    FROM course_info
+    sql_select_differ = '''select classify_id
+                                    FROM course_classify5000
                                     WHERE id = '{0}'
                                     '''
     dbHandle = DatabaseIo()
@@ -32,12 +32,13 @@ def differFusion(d):
         for j in range(len(gclist[i])):
             result = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                     sql=sql_select_differ.format(gclist[i][j]))
-            gclist[i][j] = int(transformCourseType(result[0][0]))
+            # gclist[i][j] = int(transformCourseType(result[0][0]))
+            gclist[i][j] = result[0][0]
         temp.append(list(set(gclist[i])))
         uclist.append(temp)
 
     # print uclist
-    allData = pd.read_csv('gcn/resultToRoc.csv')
+    allData = pd.read_csv('../gcn/resultToRoc.csv')
     auid = allData['uid'].values.tolist()
     acid = allData['cid'].values.tolist()
     avalue = allData['score'].values.tolist()
@@ -49,7 +50,8 @@ def differFusion(d):
             if auid[j] == uclist[i][0]:
                 result = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_select_differ.format(acid[j]))
-                checkcid = int(transformCourseType(result[0][0]))
+                # checkcid = int(transformCourseType(result[0][0]))
+                checkcid = result[0][0]
                 if checkcid in uclist[i][1]:
                     avalue[j] += 0.2
                     # print checkcid,acid[j],avalue[j]
