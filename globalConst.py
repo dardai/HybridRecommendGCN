@@ -53,3 +53,10 @@ DataBaseInfo = {
     "passwd": "ASElab905",
     "basename": "learningrecommend"
 }
+
+FSLDataBaseInfo = {
+    "address": "rm-uf6svs68d001jtvygxo.mysql.rds.aliyuncs.com",
+    "username": "train_rs",
+    "passwd": "Trs123!@#",
+    "basename": "train_recommended_sys"
+}
