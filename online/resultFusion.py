@@ -26,7 +26,7 @@ def fusion():
         ct_list = []
         for i in range(len(muid)):
             sql_select_click_times = '''select click_times
-                    FROM user_course_changed
+                    FROM account_course5000
                     WHERE user_id = '{0}'
                     AND course_id = '{1}'
                     '''
