@@ -59,9 +59,9 @@ def updateCourseDrChanged(d):
             WHERE duration > 10
             AND UNIX_TIMESTAMP(update_time) > UNIX_TIMESTAMP('{0}')'''.format(d)
 
-    sql_insert_course_dr = '''INSERT INTO course_dr(user_id, course_index, recommend_value)
+    sql_insert_course_dr = '''INSERT INTO course_dr5000(user_id, course_index, recommend_value)
                         VALUES (%s, %s, %s)'''
-    sql_clean_course_dr = 'truncate table course_dr;'
+    sql_clean_course_dr = 'truncate table course_dr5000;'
 
     dbHandle = DatabaseIo()
     if not dbHandle:

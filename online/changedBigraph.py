@@ -17,7 +17,7 @@ def getDataFromDB():
     if not dbHandle:
         return None
 
-    sql_dr = """SELECT * FROM course_dr"""
+    sql_dr = """SELECT * FROM course_dr5000"""
     # sql_course = "select id , system_course_id ,course_name from course_info"
     sql_course = """select id, name from course5000"""
     # sql_user = """select user_id from user_basic_info"""
