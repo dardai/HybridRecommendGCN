@@ -41,7 +41,7 @@ ap.add_argument("-d", "--dataset", type=str, default="fshl",
 ap.add_argument("-lr", "--learning_rate", type=float, default=0.01,
                 help="Learning rate")
 
-ap.add_argument("-e", "--epochs", type=int, default=1000,
+ap.add_argument("-e", "--epochs", type=int, default=100,
                 help="Number training epochs")
 
 ap.add_argument("-hi", "--hidden", type=int, nargs=2, default=[500, 75],

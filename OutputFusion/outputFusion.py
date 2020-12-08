@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from online.onlineRecommend import online_run
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, SetType
 import pandas as pd
@@ -27,16 +28,18 @@ def get_user_course():
     if not dbHandle:
         return None
 
-    sql_user_course = "select account_id, course_id, click_times, score from account_course5000"
+    # sql_user_course = "select user_id, course_id, click_times, score from user_course"
+    sql_user_course = "select user_id, course_id, click_times, score from account_course"
     result_user_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_user_course)
 
-    sql_user_course_changed = "select account_id, course_id, click_times, score from account_course5000"
-    result_user_course_changed = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
-                                        sql=sql_user_course_changed)
+    # sql_user_course_changed = "select user_id, course_id, click_times, score from user_course_changed"
+    # result_user_course_changed = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+    #                                     sql=sql_user_course_changed)
     dbHandle.changeCloseFlag()
 
-    result_user_course = list(result_user_course)+list(result_user_course_changed)
+    result_user_course = list(result_user_course) # +list(result_user_course_changed)
+
 
     return result_user_course
 
@@ -46,7 +49,8 @@ def get_all_users():
     if not dbHandle:
         return None
 
-    sql_user = "select id from account5000"
+    # sql_user = "select user_id from user_basic_info"
+    sql_user = "select user_id from account"
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_user)
     dbHandle.changeCloseFlag()
@@ -57,13 +61,10 @@ def popular_courses():
     courses = get_user_course()
     course_click_times = {}
     for row in courses:
-        # if int(row[1]) not in course_click_times:
-        #     course_click_times[int(row[1])] = int(row[2])
-        if row[1] not in course_click_times:
-            course_click_times[row[1]] = int(row[2])
+        if int(row[1]) not in course_click_times:
+            course_click_times[int(row[1])] = int(row[2])
         else:
-            # course_click_times[int(row[1])] = course_click_times[int(row[1])] + int(row[2])
-            course_click_times[row[1]] = course_click_times[row[1]] + int(row[2])
+            course_click_times[int(row[1])] = course_click_times[int(row[1])] + int(row[2])
     result = sort_by_value(course_click_times)
     result_dataframe = DataFrame(result)
     result_dataframe.to_csv('popular.csv', index=None, header=None)
@@ -75,11 +76,9 @@ def high_score_courses():
     course_score_sum = {}
     for row in courses:
         if int(row[1]) not in course_score_sum:
-            # course_score_sum[int(row[1])] = [int(row[3]), 1]
-            course_score_sum[row[1]] = [int(row[3]), 1]
+            course_score_sum[int(row[1])] = [int(row[3]), 1]
         else:
-            # course_score_sum[int(row[1])] = [(course_score_sum[int(row[1])][0] + int(row[3])), (course_score_sum[int(row[1])][1] + 1)]
-            course_score_sum[row[1]] = [(course_score_sum[row[1]][0] + int(row[3])), (course_score_sum[row[1]][1] + 1)]
+            course_score_sum[int(row[1])] = [(course_score_sum[int(row[1])][0] + int(row[3])), (course_score_sum[int(row[1])][1] + 1)]
     course_score = {}
     for key in course_score_sum:
         course_score[key] = course_score_sum[key][0]/course_score_sum[key][1]
@@ -93,13 +92,10 @@ def get_user_rated_num():
     courses = get_user_course()
     user_course_num = {}
     for row in courses:
-        # if int(row[0]) not in user_course_num:
-        #     user_course_num[int(row[0])] = 1
-        if row[0] not in user_course_num:
-            user_course_num[row[0]] = 1
+        if int(row[0]) not in user_course_num:
+            user_course_num[int(row[0])] = 1
         else:
-            # user_course_num[int(row[0])] = user_course_num[int(row[0])] + 1
-            user_course_num[row[0]] = user_course_num[row[0]] + 1
+            user_course_num[int(row[0])] = user_course_num[int(row[0])] + 1
     user_percentage = {}
     for key in user_course_num:
         if user_course_num[key] < 20 and user_course_num[key] >= 0:
@@ -119,18 +115,15 @@ def get_course_num(y):
     percentage = get_user_rated_num()
     course_num = {}
     for row in percentage:
-        # course_num[int(row[0])] = [int(y * float(row[1]) / 2), int(y * float(row[1]) / 2), (y - int(y * float(row[1]) / 2) - int(y * float(row[1]) / 2))]
-        course_num[row[0]] = [int(y * float(row[1]) / 2), int(y * float(row[1]) / 2), (y - int(y * float(row[1]) / 2) - int(y * float(row[1]) / 2))]
+        course_num[int(row[0])] = [int(y * float(row[1]) / 2), int(y * float(row[1]) / 2), (y - int(y * float(row[1]) / 2) - int(y * float(row[1]) / 2))]
     for row in users:
-        # if int(row[0]) not in course_num:
-        #     course_num[int(row[0])] = [int(y / 2), (y - y / 2), 0]
-        if row[0] not in course_num:
-            course_num[row[0]] = [int(y / 2), (y - y / 2), 0]
+        if int(row[0]) not in course_num:
+            course_num[int(row[0])] = [int(y / 2), (y - y / 2), 0]
     result = sort_by_key(course_num)
     return result
 
 def get_online_result():
-    # online_run()
+    online_run()
     online = pd.read_csv('online.csv', names=['uid', 'cid', 'value']).astype(str)
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x : x[2], reverse = True)
@@ -151,13 +144,10 @@ def fusion(y):
         for online_row in online_result:
             if online_count == row[1][2]:
                 break
-            # elif long(online_row[0]) == row[0]:
-            elif online_row[0] == row[0]:
-                # if long(online_row[1]) not in temp_courses.keys():
-                if online_row[1] not in temp_courses.keys():
+            elif long(online_row[0]) == row[0]:
+                if long(online_row[1]) not in temp_courses.keys():
                     online_count = online_count + 1
-                    # temp_courses[int(online_row[1])] = online_row[2]
-                    temp_courses[online_row[1]] = online_row[2]
+                    temp_courses[int(online_row[1])] = online_row[2]
 
 
         popular_num = int((y - len(temp_courses))/2)
@@ -194,7 +184,8 @@ def get_couse_info():
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
-    sql_course = "select id , name from course5000"
+    # sql_course = "select id , course_name from course_info"
+    sql_course = "select id , course_name from course"
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     dbHandle.changeCloseFlag()
@@ -209,10 +200,9 @@ def format_result(userid, y):
     data = []
     for row in result_list:
         temp_dict = {}
-        if row[0] == str(userid):
+        if row[0] == userid:
             temp_dict["courseId"] = str(row[1])
-            # temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
-            temp_dict["courseName"] = str(get_course_name(row[1], courseList))
+            temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
             if float(row[2])> 5:
                 print 1
                 row[2] = 5

@@ -39,36 +39,6 @@ getGcnInput = True
 def transToMatrix(p):
     return formatDataByType(SetType.SetType_Set, p)
 
-
-# 输入：要进行矩阵乘法运算的c和d数组，rlength是数组矩阵d的行数，clength是数组矩阵d的列数
-# 返回：实现矩阵乘法的结果矩阵
-# 注意：返回的结果矩阵是numpy.matrix类型，但二部图中定义的矩阵都是numpy.array类型，要对函数返回的结果进行类型转换
-'''
-def sparkMultiply(c, d, rlength, clength):
-    # 将d数组里的所有行数组合并成一个大数组
-    b2 = _flatten(d.tolist())
-    # 设置spark相关参数
-    sc = SparkContext('local', 'tests')
-    # 进行并行化
-    t1 = sc.parallelize(c.tolist())
-    # t2 = sc.parallelize(d)
-    # 创建行矩阵
-    m1 = RowMatrix(t1)
-    # 创建密集矩阵，由于pyspark中的矩阵都是按列存储，所以这里参数设置为True使得矩阵创建时与numpy一样按行存储
-    m2 = DenseMatrix(rlength, clength, list(b2), True)
-    # 调用pyspark中的矩阵乘法，注意这里的m2一定要对应输入时的d数据矩阵
-    mat = m1.multiply(m2)
-    # print(mat.rows.collect())
-    # 下面两行代码实现将RDD类型转换成列表类型
-    k = mat.rows.collect()
-    q = transToMatrix(k)
-    # 结束并行化
-    sc.stop()
-    print(q)
-    return q
-'''
-
-
 def getDataFromDB():
     dbHandle = DatabaseIo()
     if not dbHandle:
@@ -303,6 +273,7 @@ def bigraphMain():
     storeData(recommend_result)
     #转换为GCN可输入的数据
     if getGcnInput:
+        print 1
         storeDataAsGCNInput(recommend_result)
 
     result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])
