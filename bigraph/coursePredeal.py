@@ -31,9 +31,9 @@ def updateCourseDr():
         CASE
         WHEN score>50 THEN 1 ELSE 0 END AS score
         FROM account_course5000'''
-    sql_insert_course_dr = '''INSERT INTO course_dr(user_id, course_index, recommend_value)
+    sql_insert_course_dr = '''INSERT INTO course_dr5000(user_id, course_index, recommend_value)
                     VALUES (%s, %s, %s)'''
-    sql_clean_course_dr = 'truncate table course_dr;'
+    sql_clean_course_dr = 'truncate table course_dr5000;'
 
     dbHandle = DatabaseIo()
     if not dbHandle:
@@ -58,8 +58,6 @@ def updateCourseDr():
                    insertTuple)
     print("coursePredeal success")
 
-# def main():
-#    updateCourseDr()
 
 # main()
 updateCourseDr()

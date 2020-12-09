@@ -57,10 +57,13 @@ def popular_courses():
     courses = get_user_course()
     course_click_times = {}
     for row in courses:
-        if int(row[1]) not in course_click_times:
-            course_click_times[int(row[1])] = int(row[2])
+        # if int(row[1]) not in course_click_times:
+        #     course_click_times[int(row[1])] = int(row[2])
+        if row[1] not in course_click_times:
+            course_click_times[row[1]] = int(row[2])
         else:
-            course_click_times[int(row[1])] = course_click_times[int(row[1])] + int(row[2])
+            # course_click_times[int(row[1])] = course_click_times[int(row[1])] + int(row[2])
+            course_click_times[row[1]] = course_click_times[row[1]] + int(row[2])
     result = sort_by_value(course_click_times)
     result_dataframe = DataFrame(result)
     result_dataframe.to_csv('popular.csv', index=None, header=None)
@@ -72,9 +75,11 @@ def high_score_courses():
     course_score_sum = {}
     for row in courses:
         if int(row[1]) not in course_score_sum:
-            course_score_sum[int(row[1])] = [int(row[3]), 1]
+            # course_score_sum[int(row[1])] = [int(row[3]), 1]
+            course_score_sum[row[1]] = [int(row[3]), 1]
         else:
-            course_score_sum[int(row[1])] = [(course_score_sum[int(row[1])][0] + int(row[3])), (course_score_sum[int(row[1])][1] + 1)]
+            # course_score_sum[int(row[1])] = [(course_score_sum[int(row[1])][0] + int(row[3])), (course_score_sum[int(row[1])][1] + 1)]
+            course_score_sum[row[1]] = [(course_score_sum[row[1]][0] + int(row[3])), (course_score_sum[row[1]][1] + 1)]
     course_score = {}
     for key in course_score_sum:
         course_score[key] = course_score_sum[key][0]/course_score_sum[key][1]
@@ -88,10 +93,13 @@ def get_user_rated_num():
     courses = get_user_course()
     user_course_num = {}
     for row in courses:
-        if int(row[0]) not in user_course_num:
-            user_course_num[int(row[0])] = 1
+        # if int(row[0]) not in user_course_num:
+        #     user_course_num[int(row[0])] = 1
+        if row[0] not in user_course_num:
+            user_course_num[row[0]] = 1
         else:
-            user_course_num[int(row[0])] = user_course_num[int(row[0])] + 1
+            # user_course_num[int(row[0])] = user_course_num[int(row[0])] + 1
+            user_course_num[row[0]] = user_course_num[row[0]] + 1
     user_percentage = {}
     for key in user_course_num:
         if user_course_num[key] < 20 and user_course_num[key] >= 0:
@@ -111,10 +119,13 @@ def get_course_num(y):
     percentage = get_user_rated_num()
     course_num = {}
     for row in percentage:
-        course_num[int(row[0])] = [int(y * float(row[1]) / 2), int(y * float(row[1]) / 2), (y - int(y * float(row[1]) / 2) - int(y * float(row[1]) / 2))]
+        # course_num[int(row[0])] = [int(y * float(row[1]) / 2), int(y * float(row[1]) / 2), (y - int(y * float(row[1]) / 2) - int(y * float(row[1]) / 2))]
+        course_num[row[0]] = [int(y * float(row[1]) / 2), int(y * float(row[1]) / 2), (y - int(y * float(row[1]) / 2) - int(y * float(row[1]) / 2))]
     for row in users:
-        if int(row[0]) not in course_num:
-            course_num[int(row[0])] = [int(y / 2), (y - y / 2), 0]
+        # if int(row[0]) not in course_num:
+        #     course_num[int(row[0])] = [int(y / 2), (y - y / 2), 0]
+        if row[0] not in course_num:
+            course_num[row[0]] = [int(y / 2), (y - y / 2), 0]
     result = sort_by_key(course_num)
     return result
 
@@ -140,10 +151,13 @@ def fusion(y):
         for online_row in online_result:
             if online_count == row[1][2]:
                 break
-            elif long(online_row[0]) == row[0]:
-                if long(online_row[1]) not in temp_courses.keys():
+            # elif long(online_row[0]) == row[0]:
+            elif online_row[0] == row[0]:
+                # if long(online_row[1]) not in temp_courses.keys():
+                if online_row[1] not in temp_courses.keys():
                     online_count = online_count + 1
-                    temp_courses[int(online_row[1])] = online_row[2]
+                    # temp_courses[int(online_row[1])] = online_row[2]
+                    temp_courses[online_row[1]] = online_row[2]
 
 
         popular_num = int((y - len(temp_courses))/2)
@@ -195,9 +209,10 @@ def format_result(userid, y):
     data = []
     for row in result_list:
         temp_dict = {}
-        if row[0] == userid:
+        if row[0] == str(userid):
             temp_dict["courseId"] = str(row[1])
-            temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
+            # temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
+            temp_dict["courseName"] = str(get_course_name(row[1], courseList))
             if float(row[2])> 5:
                 print 1
                 row[2] = 5
