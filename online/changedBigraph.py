@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import random
 import codecs
+import logging
 
 from decimal import Decimal
 from utils.extends import formatDataByType, makeDic
@@ -17,7 +18,7 @@ def getDataFromDB():
     if not dbHandle:
         return None
 
-    sql_dr = """SELECT * FROM course_dr5000"""
+    sql_dr = """SELECT * FROM course_dr5000_changed"""
     # sql_course = "select id , system_course_id ,course_name from course_info"
     sql_course = """select id, name from course5000"""
     # sql_user = """select user_id from user_basic_info"""
@@ -207,6 +208,7 @@ def storeData(recommend_result):
     myfile.close()
 
 def bigraphChangedMain():
+    logging.warning("运行日志：在线模块二部图")
     print("run bigraph(changed)...")
     locate, recommend_result, learned, \
     user_length, ls, test_graph = doBigraph()

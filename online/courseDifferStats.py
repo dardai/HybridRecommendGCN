@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import pandas as pd
-
+import logging
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 from changedPredeal import getChangedData
@@ -10,6 +10,7 @@ from gcn.feature import transformCourseType
 
 
 def differFusion(d):
+    logging.warning("运行日志：在线模块类别特征融合")
     print ("run differFusion...")
     # sql_select_differ = '''select course_differ
     #                                 FROM course_info

@@ -2,11 +2,13 @@
 # -*- coding:utf-8 -*-
 
 import pandas as pd
-
+import logging
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 
 def fusion():
+
+    logging.warning("运行日志：在线模块数据融合")
     print ("run fusion...")
     differAllData = pd.read_csv('differData.csv',names=['uid', 'cid', 'score'])
     changedData = pd.read_csv('changedBigraph.csv',names=['uid', 'cid', 'score'])
