@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import logging
 
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, getEnumValue
@@ -7,6 +8,7 @@ from globalConst import DataBaseOperateType, getEnumValue
 
 # 基于阈值，拿到一段时间内交互记录里的课程类别
 def get_types():
+    logging.warning("运行日志：开始基于周期获取交互记录中的课程类别")
     # 周期的阈值，暂定为1个月
     date_threshold = 1
     # 取出周期内的原始课程id
@@ -18,6 +20,19 @@ def get_types():
         target_course_ids += course_ids
 
     return target_course_ids
+
+
+# 基于目标课程id对学习记录进行召回
+def get_recalled_records(target_course_ids):
+    logging.warning("运行日志：开始基于课程类别对应的课程id过滤学习记录")
+    # 把目标课程id拼成set，方便后续查找
+    course_id_set = "("
+    for id in target_course_ids:
+        course_id_set += '\'' + str(id[0]) + "\',"
+    course_id_set = course_id_set[0:-1]
+    course_id_set += ')'
+    records = get_target_records(course_id_set)
+    return records
 
 
     # 基于阈值设定时间取回课程id
@@ -53,17 +68,6 @@ def get_target_course_id(course_id):
 
     return course_ids
 
-
-# 基于目标课程id对学习记录进行召回
-def get_recalled_records(target_course_ids):
-    # 把目标课程id拼成set，方便后续查找
-    course_id_set = "("
-    for id in target_course_ids:
-        course_id_set += '\''+str(id[0])+"\',"
-    course_id_set = course_id_set[0:-1]
-    course_id_set += ')'
-    records = get_target_records(course_id_set)
-    return records
 
 # 基于目标课程id对学习记录进行召回查询
 def get_target_records(course_id_set):
