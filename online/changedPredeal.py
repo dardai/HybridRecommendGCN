@@ -4,6 +4,7 @@
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 import pandas as pd
+import logging
 
 #筛选增量数据
 def getChangedData(d):
@@ -25,7 +26,7 @@ def getChangedData(d):
 
 #同数据二部图预处理
 def updateCourseDrChanged(d):
-    print("update courseDrChanged...")
+    logging.warning("运行日志：在线模块数据处理")
 
     # sql_select_course = '''select user_id,course_id,
     #     (CASE
@@ -59,9 +60,9 @@ def updateCourseDrChanged(d):
             WHERE duration > 10
             AND UNIX_TIMESTAMP(update_time) > UNIX_TIMESTAMP('{0}')'''.format(d)
 
-    sql_insert_course_dr = '''INSERT INTO course_dr5000(user_id, course_index, recommend_value)
+    sql_insert_course_dr = '''INSERT INTO course_dr5000_changed(user_id, course_index, recommend_value)
                         VALUES (%s, %s, %s)'''
-    sql_clean_course_dr = 'truncate table course_dr5000;'
+    sql_clean_course_dr = 'truncate table course_dr5000_changed;'
 
     dbHandle = DatabaseIo()
     if not dbHandle:
@@ -82,4 +83,3 @@ def updateCourseDrChanged(d):
     dbHandle.changeCloseFlag()
     dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_course_dr,
                    insertTuple)
-    print("update courseDrChanged success")

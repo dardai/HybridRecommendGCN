@@ -1,12 +1,14 @@
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
 import pandas as pd
-
+import logging
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType
 
 def fusion():
+
+    logging.warning("运行日志：在线模块数据融合")
     print ("run fusion...")
     differAllData = pd.read_csv('differData.csv',names=['uid', 'cid', 'score'])
     changedData = pd.read_csv('changedBigraph.csv',names=['uid', 'cid', 'score'])
@@ -49,7 +51,7 @@ def fusion():
         # fvalue为dvalue、cvalue和惩罚因子norm_ctlist融合后的推荐值
         dvalue = mergeData['score_x'].values.tolist()
         cvalue = mergeData['score_y'].values.tolist()
-        fvalue = map(lambda(a,b,c):a*1+b+c,zip(cvalue,dvalue,norm_ctlist))
+        fvalue = map(lambda(a,b,c):a*0.3+b+c,zip(cvalue,dvalue,norm_ctlist))
 
         #mergeData增量数据变为进行融合后的结果集
         mergeData.drop(['score_x','score_y'],axis=1,inplace=True)

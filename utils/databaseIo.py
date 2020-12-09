@@ -2,7 +2,7 @@
 
 import pymysql as MySQLdb
 from globalConst import DataBaseOperateType, DataBaseInfo
-
+import logging
 MySQLdb.install_as_MySQLdb()
 
 
@@ -30,6 +30,7 @@ class DatabaseIo:
                 *params: 需要对 sql 语句进行格式化的参数
     '''
     def doSql(self, execType, sql, values=None, *params):
+        logging.warning("运行日志：执行数据库sql查询")
         result = None
         sql = formatSql(sql, *params)
 
@@ -94,6 +95,7 @@ class DatabaseIo:
 
 
 def formatSql(sql, *params):
+    logging.warning("运行日志：格式化sql语句")
     sql = ' '.join(sql.split())
     if sql.find('={}') == -1:
         return sql

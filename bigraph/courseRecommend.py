@@ -4,11 +4,8 @@
 # 本代码实现了二部图算法，并用批量存储的方法将产生的推荐结果存入到SQL server数据库中的course_model表中
 import sys
 import os
-#print(sys.path)
 project = '\\Desktop\\HybridRecommendGCN'  # 工作项目根目录
 sys.path.append(os.getcwd().split(project)[0] + project)
-#print(sys.path)
-# import databaseIo
 import prettytable as pt
 from decimal import Decimal
 # from sklearn.metrics import roc_curve, auc
@@ -16,19 +13,12 @@ import pandas as pd
 import numpy as nm
 import random
 import codecs
-# import io
-# 引入pyspark的相关包
-# from pyspark import SparkContext
-# from pyspark.mllib.linalg import Matrix
-# from pyspark.mllib.linalg.distributed import RowMatrix, DenseMatrix
-# from tkinter import _flatten
-# from Tkinter import _flatten
-
 from globalConst import DataBaseOperateType, SetType
 from utils.extends import formatDataByType, makeDic
 from utils.databaseIo import DatabaseIo
 from roc.rocUtils import saveBgInputMartix,rocLocate
 from bgUtils import storeDataAsGCNInput
+import logging
 
 # 定义将多条数据存入数据库操作
 drawRoc = False
@@ -70,6 +60,7 @@ def sparkMultiply(c, d, rlength, clength):
 
 
 def getDataFromDB():
+    logging.warning("运行日志：从数据库中读取交互数据、用户数据、课程数据")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -99,6 +90,7 @@ def getDataFromDB():
 
 # 读取推荐课程的名字
 def get_keys(value, courseList):
+    logging.warning("运行日志：根据索引读取课程的名字")
     for row in courseList:
         if row[0] == value:
             #return row[2]
@@ -106,6 +98,7 @@ def get_keys(value, courseList):
 
 
 def dataPreprocessiong():
+    logging.warning("运行日志：将从数据库中读出的数据进行数据处理")
     result_dr, result_course, result_user = getDataFromDB()
 
     drList = formatDataByType(SetType.SetType_List, result_dr)
@@ -157,6 +150,7 @@ def dataPreprocessiong():
 
 
 def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
+    logging.warning("运行日志：构建训练和测试矩阵")
     all_rated_graph = nm.zeros([course_length, user_length])  # 创建所有已评价矩阵
     train_graph = nm.zeros([course_length, user_length])  # 创建训练图矩阵
     test_graph = nm.zeros([course_length, user_length])  # 创建测试图矩阵
@@ -194,6 +188,7 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
 
 
 def doBigraph():
+    logging.warning("运行日志：二部图模型构建")
     data, learned, course_mdic, course_mdicr, \
     user_mdic, user_mdicr, dr_length, course_length, \
     user_length, courseList = dataPreprocessiong()
@@ -272,6 +267,7 @@ def doBigraph():
 
 
 def storeData(recommend_result):
+    logging.warning("运行日志：二部图推荐结果保存")
     myfile = codecs.open("data.txt", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     myfile.write("user_id")
@@ -297,6 +293,7 @@ def storeData(recommend_result):
 
 
 def bigraphMain():
+    logging.warning("运行日志：进行二部图运算")
     print("run bigraph...")
     locate, recommend_result, learned, \
     user_length, ls, test_graph = doBigraph()
@@ -334,6 +331,7 @@ def bigraphMain():
 
 
 def Main():
+    logging.warning("运行日志：对二部图推荐结果进行循环id查询展示")
     learned, result_data, test_graph = bigraphMain()
     while True:
         user_id = input("请输入用户id：")
@@ -357,4 +355,4 @@ def Main():
             print(tb)
 
 
-bigraphMain()
+#bigraphMain()

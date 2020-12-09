@@ -9,20 +9,24 @@ from pandas.core.frame import DataFrame
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
+import logging
 
 # 按值对字典进行降序排序，输出列表结果
 from utils.extends import formatDataByType, makeDic
 
 
 def sort_by_value(dic):
+    logging.warning("运行日志：按值对字典进行降序排序并返回列表结果")
     return sorted(dic.items(), key = lambda k : k[1], reverse = True)
 
 #按键对字典进行升序排序，输出列表结果
 def sort_by_key(dic):
+    logging.warning("运行日志：按键对字典进行升序排序并返回列表结果")
     return sorted(dic.items(), key = lambda k : k[0])
 
 # 获取用户与课程的交互数据，输出元组结果（用户id，课程id，点击次数，评分）
 def get_user_course():
+    logging.warning("运行日志：获取用户与课程的交互数据")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -42,6 +46,7 @@ def get_user_course():
 
 # 获取所有用户的id
 def get_all_users():
+    logging.warning("运行日志：获取所有用户的id")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -54,6 +59,7 @@ def get_all_users():
 
 # 根据点击次数，计算每个课程的被点击总次数，获取热门课程列表
 def popular_courses():
+    logging.warning("运行日志：获取热门课程列表")
     courses = get_user_course()
     course_click_times = {}
     for row in courses:
@@ -71,6 +77,7 @@ def popular_courses():
 
 # 根据课程评分，计算每个课程的平均评分，获取高评分课程列表
 def high_score_courses():
+    logging.warning("运行日志：获取高评分课程列表")
     courses = get_user_course()
     course_score_sum = {}
     for row in courses:
@@ -90,6 +97,7 @@ def high_score_courses():
 
 # 获取每个用户的交互课程数目，计算非个性化课程比例
 def get_user_rated_num():
+    logging.warning("运行日志：计算非个性化课程比例")
     courses = get_user_course()
     user_course_num = {}
     for row in courses:
@@ -115,6 +123,7 @@ def get_user_rated_num():
 """
 # 获取每个用户的推荐热门课程、高评分课程和个性化课程对应的数量
 def get_course_num(y):
+    logging.warning("运行日志：获取每个用户的推荐热门课程、高评分课程和个性化课程对应的数量")
     users = get_all_users()
     percentage = get_user_rated_num()
     course_num = {}
@@ -130,6 +139,7 @@ def get_course_num(y):
     return result
 
 def get_online_result():
+    logging.warning("运行日志：获取在线推荐模块的推荐结果")
     # online_run()
     online = pd.read_csv('online.csv', names=['uid', 'cid', 'value']).astype(str)
     online_list = online.values.tolist()
@@ -137,6 +147,7 @@ def get_online_result():
     return result
 
 def fusion(y):
+    logging.warning("运行日志：混合个性化推荐课程、热门课程、高评分课程")
     popular_course = popular_courses()
     high_score_course = high_score_courses()
     recommend_num = get_course_num(y)
@@ -186,11 +197,13 @@ def fusion(y):
     return result_dataframe
 
 def get_course_name(value, courseList):
+    logging.warning("运行日志：获取课程名称")
     for row in courseList:
         if row[0] == value:
             return row[1]
 
 def get_couse_info():
+    logging.warning("运行日志：获取课程信息")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -202,6 +215,7 @@ def get_couse_info():
     return courseList
 
 def format_result(userid, y):
+    logging.warning("运行日志：格式化混合推荐结果传递给接口")
     recommend_num = y
     result_dataframe = fusion(recommend_num)
     result_list = result_dataframe.values.tolist()
@@ -214,10 +228,8 @@ def format_result(userid, y):
             # temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
             temp_dict["courseName"] = str(get_course_name(row[1], courseList))
             if float(row[2])> 5:
-                print 1
                 row[2] = 5
             temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
-    print(data)
     return data
 
