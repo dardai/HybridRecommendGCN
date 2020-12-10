@@ -3,13 +3,13 @@ from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, SetType
 import pandas as pd
 import numpy as np
+from pandas.core.frame import DataFrame
+import logging
 #np.set_printoptions(suppress=True, threshold=np.nan)
 pd.set_option('float_format', lambda x: '%.3f' % x)
-from pandas.core.frame import DataFrame
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-import logging
 
 # 按值对字典进行降序排序，输出列表结果
 from utils.extends import formatDataByType, makeDic
@@ -51,7 +51,7 @@ def get_all_users():
     if not dbHandle:
         return None
 
-    sql_user = "select id from account5000"
+    sql_user = "select id from account"
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_user)
     dbHandle.changeCloseFlag()
@@ -194,7 +194,7 @@ def fusion(y):
     result = sorted(result, key = lambda k : k[2], reverse = True)
     result_dataframe = DataFrame(result)
     result_dataframe.to_csv('outputFusion.csv', index = None, header = None)
-    return result_dataframe
+    return result_dataframe, popular_course
 
 def get_course_name(value, courseList):
     # logging.warning(u"运行日志：获取课程名称")
@@ -209,7 +209,21 @@ def get_course_video(value, courseList):
             data.append(row[1])
             data.append(row[3])
             data.append(row[2])
-            return
+            return data
+
+def get_course_classify(value, classifyList):
+    # 获取课程的类别
+    for row in classifyList:
+        if row[0] == value:
+            return row[2]
+
+def get_course_click_times(value, click_times):
+    # 获取对应课程的点击次数
+    data = 0
+    for row in click_times:
+        if row[0] == value:
+            data = row[1]
+    return data
 
 def get_couse_info():
     # logging.warning(u"运行日志：获取课程信息")
@@ -236,10 +250,26 @@ def get_couse_info_with_video():
     courseList = formatDataByType(SetType.SetType_List, result_course)
     return courseList
 
+def get_course_info_with_image():
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+    # 先用图片替代模拟视频
+    sql_course = "select id, name, image, description from course5000"
+    sql_classify = "select id, course_name, classify_name from course_classify5000"
+    result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                   sql=sql_course)
+    result_course_classify = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                   sql=sql_classify)
+    dbHandle.changeCloseFlag()
+    courseList = formatDataByType(SetType.SetType_List, result_course)
+    classifyList = formatDataByType(SetType.SetType_List, result_course_classify)
+    return courseList, classifyList
+
 def format_result(userid, y):
     logging.warning(u"运行日志：格式化混合推荐结果传递给接口")
     recommend_num = y
-    result_dataframe = fusion(recommend_num)
+    result_dataframe, click_times = fusion(recommend_num)
     result_list = result_dataframe.values.tolist()
     # print(result_list)
     courseList = get_couse_info()
@@ -256,10 +286,10 @@ def format_result(userid, y):
             data.append(temp_dict)
     return data
 
-def format_result_with_image(userid, y):
+def format_result_with_video(userid, y):
     logging.warning(u"运行日志：格式化带有视频的推荐结果给接口")
     recommend_num = y
-    result_dataframe = fusion(recommend_num)
+    result_dataframe, click_times = fusion(recommend_num)
     result_list = result_dataframe.values.tolist()
     courseList = get_couse_info_with_video()
     data = []
@@ -274,5 +304,21 @@ def format_result_with_image(userid, y):
             data.append(temp_dict)
     return data
 
-
-
+def format_result_with_image(userid, y):
+    logging.warning(u"运行日志：格式化带有图片的推荐结果给接口")
+    recommend_num = y
+    result_dataframe, click_times = fusion(recommend_num)
+    result_list = result_dataframe.values.tolist()
+    courseList, classifyList = get_course_info_with_image()
+    data = []
+    for row in result_list:
+        temp_dict = {}
+        if row[0] == str(userid):
+            temp_course_info = get_course_video(row[1], courseList)
+            temp_dict["courseName"] = str(temp_course_info[0])
+            temp_dict["image"] = str(temp_course_info[2])
+            temp_dict["courseClassify"] = str(get_course_classify(row[1], classifyList))
+            temp_dict["clickTimes"] = str(get_course_click_times(row[1], click_times))
+            temp_dict["description"] = str(temp_course_info[1])
+            data.append(temp_dict)
+    return data
