@@ -8,7 +8,7 @@ from OutputFusion.outputFusion import format_result
 
 class ServerHTTP(BaseHTTPRequestHandler):
     def do_GET(self):
-        logging.warning("运行日志：接口GET")
+        logging.warning(u"运行日志：接口GET")
         path = self.path
         # 拆分url(也可根据拆分的url获取Get提交才数据),可以将不同的path和参数加载不同的html页面，或调用不同的方法返回不同的数据，来实现简单的网站或接口
         query = urllib.splitquery(path)
@@ -31,7 +31,7 @@ class ServerHTTP(BaseHTTPRequestHandler):
         self.wfile.write(buf)
 
     def do_POST(self):
-        logging.warning("运行日志：接口POST")
+        logging.warning(u"运行日志：接口POST")
         path = self.path
         datas = self.rfile.read(int(self.headers['content-length']))
 

@@ -16,17 +16,17 @@ from utils.extends import formatDataByType, makeDic
 
 
 def sort_by_value(dic):
-    logging.warning("运行日志：按值对字典进行降序排序并返回列表结果")
+    # logging.warning(u"运行日志：按值对字典进行降序排序并返回列表结果")
     return sorted(dic.items(), key = lambda k : k[1], reverse = True)
 
 #按键对字典进行升序排序，输出列表结果
 def sort_by_key(dic):
-    logging.warning("运行日志：按键对字典进行升序排序并返回列表结果")
+    # logging.warning(u"运行日志：按键对字典进行升序排序并返回列表结果")
     return sorted(dic.items(), key = lambda k : k[0])
 
 # 获取用户与课程的交互数据，输出元组结果（用户id，课程id，点击次数，评分）
 def get_user_course():
-    logging.warning("运行日志：获取用户与课程的交互数据")
+    # logging.warning(u"运行日志：获取用户与课程的交互数据")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -46,7 +46,7 @@ def get_user_course():
 
 # 获取所有用户的id
 def get_all_users():
-    logging.warning("运行日志：获取所有用户的id")
+    # logging.warning(u"运行日志：获取所有用户的id")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -59,7 +59,7 @@ def get_all_users():
 
 # 根据点击次数，计算每个课程的被点击总次数，获取热门课程列表
 def popular_courses():
-    logging.warning("运行日志：获取热门课程列表")
+    logging.warning(u"运行日志：获取热门课程列表")
     courses = get_user_course()
     course_click_times = {}
     for row in courses:
@@ -77,7 +77,7 @@ def popular_courses():
 
 # 根据课程评分，计算每个课程的平均评分，获取高评分课程列表
 def high_score_courses():
-    logging.warning("运行日志：获取高评分课程列表")
+    logging.warning(u"运行日志：获取高评分课程列表")
     courses = get_user_course()
     course_score_sum = {}
     for row in courses:
@@ -97,7 +97,7 @@ def high_score_courses():
 
 # 获取每个用户的交互课程数目，计算非个性化课程比例
 def get_user_rated_num():
-    logging.warning("运行日志：计算非个性化课程比例")
+    logging.warning(u"运行日志：计算非个性化课程比例")
     courses = get_user_course()
     user_course_num = {}
     for row in courses:
@@ -123,7 +123,7 @@ def get_user_rated_num():
 """
 # 获取每个用户的推荐热门课程、高评分课程和个性化课程对应的数量
 def get_course_num(y):
-    logging.warning("运行日志：获取每个用户的推荐热门课程、高评分课程和个性化课程对应的数量")
+    logging.warning(u"运行日志：获取每个用户的推荐热门课程、高评分课程和个性化课程对应的数量")
     users = get_all_users()
     percentage = get_user_rated_num()
     course_num = {}
@@ -139,15 +139,15 @@ def get_course_num(y):
     return result
 
 def get_online_result():
-    logging.warning("运行日志：获取在线推荐模块的推荐结果")
+    logging.warning(u"运行日志：获取在线推荐模块的推荐结果")
     # online_run()
-    online = pd.read_csv('online.csv', names=['uid', 'cid', 'value']).astype(str)
+    online = pd.read_csv('online/online.csv', names=['uid', 'cid', 'value']).astype(str)
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x : x[2], reverse = True)
     return result
 
 def fusion(y):
-    logging.warning("运行日志：混合个性化推荐课程、热门课程、高评分课程")
+    logging.warning(u"运行日志：混合个性化推荐课程、热门课程、高评分课程")
     popular_course = popular_courses()
     high_score_course = high_score_courses()
     recommend_num = get_course_num(y)
@@ -197,17 +197,39 @@ def fusion(y):
     return result_dataframe
 
 def get_course_name(value, courseList):
-    logging.warning("运行日志：获取课程名称")
+    # logging.warning(u"运行日志：获取课程名称")
     for row in courseList:
         if row[0] == value:
             return row[1]
 
+def get_course_video(value, courseList):
+    data = [] # 课程名称、课程简介、课程模拟视频（先用图片替代）
+    for row in courseList:
+        if row[0] == value:
+            data.append(row[1])
+            data.append(row[3])
+            data.append(row[2])
+            return
+
 def get_couse_info():
-    logging.warning("运行日志：获取课程信息")
+    # logging.warning(u"运行日志：获取课程信息")
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
-    sql_course = "select id , name from course5000"
+    sql_course = "select id, name from course5000"
+    result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                   sql=sql_course)
+    dbHandle.changeCloseFlag()
+    courseList = formatDataByType(SetType.SetType_List, result_course)
+    return courseList
+
+def get_couse_info_with_video():
+    # logging.warning(u"运行日志：获取课程信息")
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+    # 先用图片替代模拟视频
+    sql_course = "select id, name, image, description from course5000"
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     dbHandle.changeCloseFlag()
@@ -215,10 +237,11 @@ def get_couse_info():
     return courseList
 
 def format_result(userid, y):
-    logging.warning("运行日志：格式化混合推荐结果传递给接口")
+    logging.warning(u"运行日志：格式化混合推荐结果传递给接口")
     recommend_num = y
     result_dataframe = fusion(recommend_num)
     result_list = result_dataframe.values.tolist()
+    # print(result_list)
     courseList = get_couse_info()
     data = []
     for row in result_list:
@@ -232,4 +255,24 @@ def format_result(userid, y):
             temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
     return data
+
+def format_result_with_image(userid, y):
+    logging.warning(u"运行日志：格式化带有视频的推荐结果给接口")
+    recommend_num = y
+    result_dataframe = fusion(recommend_num)
+    result_list = result_dataframe.values.tolist()
+    courseList = get_couse_info_with_video()
+    data = []
+    for row in result_list:
+        temp_dict = {}
+        if row[0] == str(userid):
+            temp_course_info = get_course_video(row[1], courseList)
+            temp_dict["courseName"] = str(temp_course_info[0])
+            temp_dict["courseId"] = str(row[1])
+            temp_dict["description"] = str(temp_course_info[1])
+            temp_dict["video"] = str(temp_course_info[2])
+            data.append(temp_dict)
+    return data
+
+
 

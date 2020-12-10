@@ -7,7 +7,7 @@ import logging
 
 
 def updateCourseDr():
-    logging.warning("运行日志：开始数据预处理")
+    logging.warning(u"运行日志：开始数据预处理")
     print("run coursePredeal...")
     """
     sql_select_course = '''select user_id,course_id,

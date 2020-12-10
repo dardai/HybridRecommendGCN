@@ -591,7 +591,7 @@ def new_train_split():
     i = 0
     # 注意这里要换用二部图的输出
     #with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
-    with open('../gcn/toGcn.csv', 'r') as f:
+    with open('gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
             u_nodes.append(int(row[0]))

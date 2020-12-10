@@ -441,7 +441,7 @@ def transformCourseType(courseType):
 
 
 def makeFeature():
-    logging.warning("运行日志：构建特征")
+    logging.warning(u"运行日志：构建特征")
     user_feature = []
     course_feature = []
 
@@ -488,9 +488,9 @@ def makeFeature():
 
 
 def getAllUserAndCourse():
-    logging.warning("运行日志：获取所有的用户和课程")
+    logging.warning(u"运行日志：获取所有的用户和课程")
     u_nodes, v_nodes, ratings = [], [], []
-    with open('../gcn/toGcn.csv', 'r') as f:
+    with open('gcn/toGcn.csv', 'r') as f:
     # with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
@@ -508,7 +508,7 @@ def getAllUserAndCourse():
 
 
 def getAllUserInfo(user_dict):
-    logging.warning("运行日志：获取所有的用户信息")
+    logging.warning(u"运行日志：获取所有的用户信息")
     # sql = 'SELECT user_id, points, position, gender FROM user_basic_info'
     sql = """select id from account5000"""
     dbHandle = DatabaseIo()
@@ -522,7 +522,7 @@ def getAllUserInfo(user_dict):
 
 
 def getAllCourseInfo(course_dict):
-    logging.warning("运行日志：获取所有的课程信息")
+    logging.warning(u"运行日志：获取所有的课程信息")
     # sql = 'SELECT id, course_differ, course_type FROM course_info'
     sql = 'SELECT id, classify_id FROM course5000'
 
@@ -536,7 +536,7 @@ def getAllCourseInfo(course_dict):
 
 
 def makeDataDict(index_dict, data_list):
-    logging.warning("运行日志：构建数据字典")
+    # logging.warning(u"运行日志：构建数据字典")
     data_dict = {}
     for index in index_dict.keys():
         for one_data in data_list:

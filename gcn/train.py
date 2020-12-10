@@ -294,7 +294,7 @@ placeholders = {
 
 # create model
 if FEATURES:
-    logging.warning("运行日志：构建附带边信息的模型")
+    logging.warning(u"运行日志：构建附带边信息的模型")
     model = RecommenderSideInfoGAE(placeholders,
                                    input_dim=u_features.shape[1],
                                    feat_hidden_dim=FEATHIDDEN,
@@ -310,7 +310,7 @@ if FEATURES:
                                    num_side_features=num_side_features,
                                    logging=True)
 else:
-    logging.warning("运行日志：构建不含边信息的模型")
+    logging.warning(u"运行日志：构建不含边信息的模型")
     model = RecommenderGAE(placeholders,
                            input_dim=u_features.shape[1],
                            num_classes=NUMCLASSES,
