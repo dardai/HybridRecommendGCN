@@ -10,7 +10,7 @@ from gcn.feature import transformCourseType
 
 
 def differFusion(d):
-    logging.warning("运行日志：在线模块类别特征融合")
+    logging.warning(u"运行日志：在线模块类别特征融合")
     print ("run differFusion...")
     # sql_select_differ = '''select course_differ
     #                                 FROM course_info
@@ -43,7 +43,7 @@ def differFusion(d):
         uclist.append(temp)
 
     # print uclist
-    allData = pd.read_csv('resultToRoc.csv')
+    allData = pd.read_csv('../resultToRoc.csv')
     auid = allData['uid'].values.tolist()
     acid = allData['cid'].values.tolist()
     avalue = allData['score'].values.tolist()
@@ -66,4 +66,3 @@ def differFusion(d):
     differData.to_csv('differData.csv',index=None,header=None)
     print ("differFusion success")
     return differData
-

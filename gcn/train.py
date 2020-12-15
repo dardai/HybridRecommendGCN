@@ -25,6 +25,7 @@ from preprocessing import create_trainvaltest_split, sparse_to_tuple, \
 from model import RecommenderGAE, RecommenderSideInfoGAE
 from utils import construct_feed_dict, getReversalDict, getRealId
 from utils import write_csv2 as write_csv
+import logging
 
 # Set random seed
 # seed = 123 # use only for unit testing
@@ -293,6 +294,7 @@ placeholders = {
 
 # create model
 if FEATURES:
+    logging.warning(u"运行日志：构建附带边信息的模型")
     model = RecommenderSideInfoGAE(placeholders,
                                    input_dim=u_features.shape[1],
                                    feat_hidden_dim=FEATHIDDEN,
@@ -308,6 +310,7 @@ if FEATURES:
                                    num_side_features=num_side_features,
                                    logging=True)
 else:
+    logging.warning(u"运行日志：构建不含边信息的模型")
     model = RecommenderGAE(placeholders,
                            input_dim=u_features.shape[1],
                            num_classes=NUMCLASSES,
@@ -386,16 +389,7 @@ for epoch in range(NB_EPOCH):
 
     val_avg_loss, val_rmse = sess.run([model.loss, model.rmse], feed_dict=val_feed_dict)
     outs = sess.run([model.probs, model.loss, model.rmse], feed_dict=val_feed_dict)
-    '''
-    print("____________________")
-    print(outs[0])
-    print("____________________")
-    print(len(outs[0]))
-    print("____________________")
 
-    f = open('result.csv', 'w')
-    content = csv.writer(f)
-'''
     if VERBOSE:
         print("[*] Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_avg_loss),
               "train_rmse=", "{:.5f}".format(train_rmse),

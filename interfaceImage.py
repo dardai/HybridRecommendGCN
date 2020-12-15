@@ -3,7 +3,7 @@ import json
 import urllib
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 import logging
-from OutputFusion.outputFusion import format_result
+from OutputFusion.outputFusion import format_result_with_image
 
 
 class ServerHTTP(BaseHTTPRequestHandler):
@@ -39,8 +39,8 @@ class ServerHTTP(BaseHTTPRequestHandler):
         for i in datas.split("&"):
             (key, value) = i.split("=")
             result[key] = value;
-        #results = format_result(int(result["userId"]),int(result["listNumber"]))
-        results = format_result(str(result["userId"]),int(result["listNumber"]))
+
+        results = format_result_with_image(str(result["userId"]),int(result["listNumber"]))
 
         datas = {}
         datas["status"] = 200

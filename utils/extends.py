@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from globalConst import SetType
+import logging
 
 
 def formatDataByType(setType, data):
+    # logging.warning(u"运行日志：根据类型格式化数据")
     result = None
     if setType == SetType.SetType_List:
         result = list()
@@ -21,6 +23,7 @@ def formatDataByType(setType, data):
 
 
 def makeDic(dataList):
+    # logging.warning(u"运行日志：构建双向字典")
     index = 0
     mdic, mdicr = {}, {}
     for row in dataList:

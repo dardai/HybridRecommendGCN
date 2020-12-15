@@ -8,6 +8,7 @@ from enum import Enum, IntEnum
 from databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, getEnumValue
 
+import logging
 
 class CourseType(Enum):
     CourseType_None = 0
@@ -158,6 +159,7 @@ class CourseDiffer(IntEnum):
 
 
 def transformCourseType(courseType):
+    logging.warning("运行日志：转换课程类型")
     result = CourseDiffer.CourseDiffer_None
 
     if courseType.encode("utf-8") == '2017狮王争霸':
@@ -439,6 +441,7 @@ def transformCourseType(courseType):
 
 
 def makeFeature():
+    logging.warning(u"运行日志：构建特征")
     user_feature = []
     course_feature = []
 
@@ -448,25 +451,34 @@ def makeFeature():
     user_length = len(user_dict)
     course_length = len(course_dict)
     max_point = 1
+    # 没有积分数据，先注释掉
+    # for key, value in user_data_dict.items():
+        # if max_point < value[1]:
+        #     max_point = value[1]
 
-    for key, value in user_data_dict.items():
-        if max_point < value[1]:
-            max_point = value[1]
     for index in range(user_length):
         one_list = []
-        one_list.append(float(user_data_dict[index][1]) / max_point)
+        # one_list.append(float(user_data_dict[index][1]) / max_point)
+        #没有积分数据，临时改成1
+        one_list.append(1)
         user_feature.append(one_list)
+
     for index in range(course_length):
         value = CourseType.CourseType_None
         if index in course_data_dict.keys():
-            value = transformCourseType(course_data_dict[index][1])
+            # value = transformCourseType(course_data_dict[index][1])
+            #类别现在是id，现在不用transformCourseType转换
+            value = course_data_dict[index][1]
 
-        course_feature.append(getEnumValue(value))
+        # course_feature.append(getEnumValue(value))
+        # 类别现在是id，直接append即可
+        course_feature.append(value)
 
     course_features = np.zeros((course_length, 136), dtype=np.float32)
-    for index in course_dict.keys():
-        other_index = course_feature[index] - 1
-        course_features[index][other_index] = 1
+    # for index in course_dict.keys():
+    #     other_index = course_feature[index] - 1
+    #     print other_index
+    #     course_features[index][other_index] = 1
 
     #print(user_feature)
     #print('----------------')
@@ -476,6 +488,7 @@ def makeFeature():
 
 
 def getAllUserAndCourse():
+    logging.warning(u"运行日志：获取所有的用户和课程")
     u_nodes, v_nodes, ratings = [], [], []
     with open('gcn/toGcn.csv', 'r') as f:
     # with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
@@ -495,11 +508,13 @@ def getAllUserAndCourse():
 
 
 def getAllUserInfo(user_dict):
-    sql = 'SELECT user_id, points, position, gender FROM user_basic_info'
-
+    logging.warning(u"运行日志：获取所有的用户信息")
+    # sql = 'SELECT user_id, points, position, gender FROM user_basic_info'
+    sql = """select id from account5000"""
     dbHandle = DatabaseIo()
 
     dataList = dbHandle.doSql(DataBaseOperateType.SearchMany, sql)
+
 
     user_data_dict = makeDataDict(user_dict, dataList)
 
@@ -507,7 +522,9 @@ def getAllUserInfo(user_dict):
 
 
 def getAllCourseInfo(course_dict):
-    sql = 'SELECT id, course_differ, course_type FROM course_info'
+    logging.warning(u"运行日志：获取所有的课程信息")
+    # sql = 'SELECT id, course_differ, course_type FROM course_info'
+    sql = 'SELECT id, classify_id FROM course5000'
 
     dbHandle = DatabaseIo()
 
@@ -519,6 +536,7 @@ def getAllCourseInfo(course_dict):
 
 
 def makeDataDict(index_dict, data_list):
+    # logging.warning(u"运行日志：构建数据字典")
     data_dict = {}
     for index in index_dict.keys():
         for one_data in data_list:

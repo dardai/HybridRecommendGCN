@@ -26,7 +26,7 @@ def getChangedData(d):
 
 #同数据二部图预处理
 def updateCourseDrChanged(d):
-    logging.warning("运行日志：在线模块数据处理")
+    logging.warning(u"运行日志：在线模块数据处理")
 
     # sql_select_course = '''select user_id,course_id,
     #     (CASE

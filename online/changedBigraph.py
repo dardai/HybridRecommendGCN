@@ -208,7 +208,7 @@ def storeData(recommend_result):
     myfile.close()
 
 def bigraphChangedMain():
-    logging.warning("运行日志：在线模块二部图")
+    logging.warning(u"运行日志：在线模块二部图")
     print("run bigraph(changed)...")
     locate, recommend_result, learned, \
     user_length, ls, test_graph = doBigraph()
