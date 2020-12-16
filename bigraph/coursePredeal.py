@@ -34,7 +34,7 @@ def updateCourseDr():
             WHEN 'YES' THEN 1.5 ELSE 0 END AS commit_status,
             CASE
             WHEN score>50 THEN 1 ELSE 0 END AS score
-            FROM accountd_course'''
+            FROM account_course5000'''
     sql_insert_course_dr = '''INSERT INTO course_dr(user_id, course_index, recommend_value)
                         VALUES (%s, %s, %s)'''
     sql_clean_course_dr = 'truncate table course_dr;'

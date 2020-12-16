@@ -17,8 +17,8 @@ def differFusion(d):
     #                                 WHERE id = '{0}'
     #                                 '''
     sql_select_differ = '''select classify_id
-                                        FROM course_classify
-                                        WHERE course_id = '{0}'
+                                        FROM course_classify5000
+                                        WHERE id = '{0}'
                                         '''
     dbHandle = DatabaseIo()
     if not dbHandle:

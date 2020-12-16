@@ -70,7 +70,11 @@ def fusion():
         fusionData = differAllData
         print ("no changed data , no fusion..")
 
-    fusionData.to_csv('online.csv', header=None, index=None)
-    fusionData.to_csv('../gcn/resultToRoc.csv',index=None)
+
+    baseData = pd.read_csv('../resultToRoc.csv')
+    updatedBaseData = baseData.append(fusionData)
+    updatedBaseData.drop_duplicates(subset=['uid','cid'],keep='last',inplace=True)
+    updatedBaseData.to_csv('../resultToRoc.csv',index=None)
+    updatedBaseData.to_csv('online.csv', header=None, index=None)
 
     return fusionData

@@ -42,7 +42,7 @@ def getDataFromDB():
 def get_keys(value, courseList):
     for row in courseList:
         if row[0] == value:
-            return row[2]
+            return row[1]
 
 def dataPreprocessiong():
     result_dr, result_course, result_user = getDataFromDB()
