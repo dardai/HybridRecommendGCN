@@ -66,9 +66,9 @@ def fusion():
         fusionData.drop(['index'],axis=1,inplace=True)
         print ("fusion success")
     else:
-        #增量数据与离线全量数据中没有相同的用户-课程对，不进行融合
+        #增量数据与离线全量数据中没有相同的用户-课程对，不进行融合，只根据类别加分
         fusionData = differAllData
-        print ("no changed data , no fusion..")
+        print ("no changed data..")
 
 
     baseData = pd.read_csv('../resultToRoc.csv')

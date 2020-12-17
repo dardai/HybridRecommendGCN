@@ -52,7 +52,7 @@ def differFusion(d):
     # 如果对一个目标用户，增量数据里面有全量数据中没有交互过的类别，那不算它，只给交互过的类别增加0.2
     for i in range(len(uclist)):
         for j in range(len(auid)):
-            if auid[j] == uclist[i][0]:
+            if auid[j] == long(uclist[i][0]):
                 result = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_select_differ.format(acid[j]))
                 # checkcid = int(transformCourseType(result[0][0]))
