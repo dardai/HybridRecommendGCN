@@ -7,6 +7,7 @@ from changedPredeal import updateCourseDrChanged
 from courseDifferStats import differFusion
 from changedBigraph import bigraphChangedMain
 from resultFusion import fusion
+from courseDislikeStats import dislikeFusion
 
 def online_run():
     # 设定秒数
@@ -17,6 +18,7 @@ def online_run():
         d = datetime.datetime.fromtimestamp(d)
         updateCourseDrChanged(d)
         differFusion(d)
+        dislikeFusion()
         bigraphChangedMain()
         data = fusion()
         time.sleep(changedTime)

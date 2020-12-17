@@ -10,7 +10,7 @@ def fusion():
 
     logging.warning(u"运行日志：在线模块数据融合")
     print ("run fusion...")
-    differAllData = pd.read_csv('differData.csv',names=['uid', 'cid', 'score'])
+    differAllData = pd.read_csv('dislikeData.csv',names=['uid', 'cid', 'score'])
     changedData = pd.read_csv('changedBigraph.csv',names=['uid', 'cid', 'score'])
 
     dbHandle = DatabaseIo()
