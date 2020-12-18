@@ -19,6 +19,7 @@ from utils.databaseIo import DatabaseIo
 from roc.rocUtils import saveBgInputMartix,rocLocate
 from bgUtils import storeDataAsGCNInput
 import logging
+import scipy.sparse as sp
 
 # 定义将多条数据存入数据库操作
 drawRoc = False
@@ -28,6 +29,36 @@ getGcnInput = True
 # 返回：转换成功的列表，形如[ [1,1,1], [1,1,1], [1,1,1] ]
 def transToMatrix(p):
     return formatDataByType(SetType.SetType_Set, p)
+
+
+# 输入：要进行矩阵乘法运算的c和d数组，rlength是数组矩阵d的行数，clength是数组矩阵d的列数
+# 返回：实现矩阵乘法的结果矩阵
+# 注意：返回的结果矩阵是numpy.matrix类型，但二部图中定义的矩阵都是numpy.array类型，要对函数返回的结果进行类型转换
+'''
+def sparkMultiply(c, d, rlength, clength):
+    # 将d数组里的所有行数组合并成一个大数组
+    b2 = _flatten(d.tolist())
+    # 设置spark相关参数
+    sc = SparkContext('local', 'tests')
+    # 进行并行化
+    t1 = sc.parallelize(c.tolist())
+    # t2 = sc.parallelize(d)
+    # 创建行矩阵
+    m1 = RowMatrix(t1)
+    # 创建密集矩阵，由于pyspark中的矩阵都是按列存储，所以这里参数设置为True使得矩阵创建时与numpy一样按行存储
+    m2 = DenseMatrix(rlength, clength, list(b2), True)
+    # 调用pyspark中的矩阵乘法，注意这里的m2一定要对应输入时的d数据矩阵
+    mat = m1.multiply(m2)
+    # print(mat.rows.collect())
+    # 下面两行代码实现将RDD类型转换成列表类型
+    k = mat.rows.collect()
+    q = transToMatrix(k)
+    # 结束并行化
+    sc.stop()
+    print(q)
+    return q
+'''
+
 
 def getDataFromDB():
     logging.warning(u"运行日志：从数据库中读取交互数据、用户数据、课程数据")
@@ -97,21 +128,6 @@ def dataPreprocessiong():
 
     data = pd.DataFrame(result)
 
-    # # 用dcL删除某些结果里没有的课程
-    # #dc = pd.read_csv("C:/Users/Administrator/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
-    # dc = pd.read_csv("roc/toGcn2.csv")
-    # #dc = pd.read_csv("C:/Users/zyt/Desktop/HybridRecommendGCN/roc/toGcn2.csv")
-    # dc.drop_duplicates(subset=['cid'], keep='first', inplace=True)
-    # dcL = list(dc['cid'])
-    # #去重
-    # data.drop_duplicates(subset=[0, 1], keep='first', inplace=True)
-    # data.reset_index(inplace=True)
-    # # 删除结果里没有的课程
-    # for i in range(len(data)):
-    #     if data[1][i] not in dcL:
-    #         data.drop(i, axis=0, inplace=True)
-    # data.drop('index', axis=1, inplace=True)
-
     if drawRoc:
         saveBgInputMartix(data,user_mdicr)
 
@@ -121,10 +137,14 @@ def dataPreprocessiong():
 
 def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
     logging.warning(u"运行日志：构建训练和测试矩阵")
-    all_rated_graph = nm.zeros([course_length, user_length])  # 创建所有已评价矩阵
-    train_graph = nm.zeros([course_length, user_length])  # 创建训练图矩阵
-    test_graph = nm.zeros([course_length, user_length])  # 创建测试图矩阵
-    train_rated_graph = nm.zeros([course_length, user_length])  # 创建训练集里已评价矩阵
+    # all_rated_graph = nm.zeros([course_length, user_length])  # 创建所有已评价矩阵
+    # train_graph = nm.zeros([course_length, user_length])  # 创建训练图矩阵
+    # test_graph = nm.zeros([course_length, user_length])  # 创建测试图矩阵
+    # train_rated_graph = nm.zeros([course_length, user_length])  # 创建训练集里已评价矩阵
+    all_rated_graph = sp.lil_matrix((course_length, user_length))  # 创建所有已评价压缩矩阵
+    train_graph = sp.lil_matrix((course_length, user_length))  # 创建训练图压缩矩阵
+    test_graph = sp.lil_matrix((course_length, user_length))  # 创建测试图压缩矩阵
+    train_rated_graph = sp.lil_matrix((course_length, user_length))  # 创建训练集里已评价压缩矩阵
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
     #如果需要得到可以输入gcn的数据，就不切分数据集
     if getGcnInput:
@@ -134,8 +154,8 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
-                #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
-                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                # train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
     else:
         for index, row in data.iterrows():
@@ -151,8 +171,14 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
 
                 if (int(row[2]) >= 3.0):
                     #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
-                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                     train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+
+    # 转换成csr_matrix
+    all_rated_graph = all_rated_graph.tocsr()
+    train_graph = train_graph.tocsr()
+    test_graph = test_graph.tocsr()
+    train_rated_graph = train_rated_graph.tocsr()
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
 
@@ -174,11 +200,13 @@ def doBigraph():
 
     # 求产品的度
     for rid in range(course_length):
-        kjs[rid] = train_graph[rid, :].sum()
+        kjs[rid] = train_graph.getrow(rid).sum()
+        # kjs[rid] = train_graph[rid, :].sum()
 
     # 求用户的度
     for cid in range(user_length):
-        kls[cid] = train_graph[:, cid].sum()
+        kls[cid] = train_graph.getcol(cid).sum()
+        # kls[cid] = train_graph[:, cid].sum()
 
     # 计算每个用户未选择产品的度
     s = nm.ones(user_length)
@@ -194,22 +222,49 @@ def doBigraph():
             kls[i] = 99999
 
     # 求资源配额矩阵
-    weights = nm.zeros([course_length, course_length])
+    # weights = sp.lil_matrix((course_length, course_length))
+    # weights = nm.zeros([course_length, course_length])
     # 转换为矩阵乘法和向量除法
     # 设定若干中间值
-    gt = train_graph.T
-    temp = nm.zeros([user_length, course_length])
-    for i in range(course_length):
-        temp[:, i] = gt[:, i] / kls
+    gt = train_graph.transpose()
+    gi = gt.getcol(0)
+    kls = kls.reshape(user_length, 1)
+    temp = gi / kls
+    temp = temp.reshape(user_length, 1)
+    temp = sp.csr_matrix(temp)
+    # temp = nm.zeros([user_length, course_length])
+    for i in range(1, course_length):
+        gi = gt.getcol(i)
+        t = gi / kls
+        t = t.reshape(user_length, 1)
+        t = sp.csr_matrix(t)
+        temp = sp.hstack([temp, t])
+        # temp[:, i] = gt[:, i] / kls
+    temp = sp.csr_matrix(temp)
 
     # temp = nm.array(sparkMultiply(train_graph, temp,
     #                              user_length, course_length))
-    temp = nm.matmul(train_graph, temp)
-    for i in range(course_length):
-        weights[i, :] = temp[i, :] / kjs
+    # temp = nm.matmul(train_graph, temp)
+    temp = train_graph.dot(temp)
+    temp = sp.csr_matrix(temp)
+    tempi = temp.getrow(0)
+    kjs = kjs.reshape(1, course_length)
+    weights = tempi / kjs
+    weights = weights.reshape(1, course_length)
+    weights = sp.csr_matrix(weights)
+    for i in range(1, course_length):
+        tempi = temp.getrow(i)
+        w = tempi / kjs
+        w = w.reshape(1, course_length)
+        w = sp.csr_matrix(w)
+        weights = sp.vstack([weights, w])
+        # weights[i, :] = temp[i, :] / kjs
+    weights = sp.csr_matrix(weights)
 
     # 求各个用户的资源分配矩阵
-    locate = nm.matmul(weights, train_rated_graph)
+    # locate = nm.matmul(weights, train_rated_graph)
+    locate = weights.dot(train_rated_graph)
+    locate = sp.csr_matrix(locate).toarray()
     # locate = nm.array(sparkMultiply(weights, train_rated_graph,
     #                                course_length, user_length))
     # 将算法产生的推荐结果以列表形式存储
@@ -270,7 +325,6 @@ def bigraphMain():
     storeData(recommend_result)
     #转换为GCN可输入的数据
     if getGcnInput:
-        print 1
         storeDataAsGCNInput(recommend_result)
 
     result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])
@@ -284,10 +338,13 @@ def bigraphMain():
 
     # 得到资源配置矩阵对应的排名
     indiceLocate = nm.argsort(locate, axis=0)
+    indiceLocate = sp.csr_matrix(indiceLocate)
 
     # 通过矩阵对应元素相乘得到测试集的排名数据
     # 为方便后续处理，对结果进行转置
-    testIndice = (indiceLocate * test_graph).T
+    # testIndice = (indiceLocate * test_graph).T
+    testIndice = indiceLocate.multiply(test_graph)
+    testIndice = sp.csr_matrix(testIndice).transpose().toarray()
     # 求精确度的值
     usum = 0
     # 计算测试集中每部已评分电影的距离，并求均值
@@ -326,4 +383,4 @@ def Main():
             print(tb)
 
 
-#bigraphMain()
+# bigraphMain()

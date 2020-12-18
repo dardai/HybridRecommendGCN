@@ -12,6 +12,7 @@ from utils.extends import formatDataByType, makeDic
 from globalConst import DataBaseOperateType, SetType
 from changedPredeal import updateCourseDrChanged
 from utils.databaseIo import DatabaseIo
+import scipy.sparse as sp
 
 def getDataFromDB():
     dbHandle = DatabaseIo()
@@ -42,7 +43,7 @@ def getDataFromDB():
 def get_keys(value, courseList):
     for row in courseList:
         if row[0] == value:
-            return row[1]
+            return row[2]
 
 def dataPreprocessiong():
     result_dr, result_course, result_user = getDataFromDB()
@@ -79,10 +80,14 @@ def dataPreprocessiong():
 
 
 def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
-    all_rated_graph = np.zeros([course_length, user_length])  # 创建所有已评价矩阵
-    train_graph = np.zeros([course_length, user_length])  # 创建训练图矩阵
-    test_graph = np.zeros([course_length, user_length])  # 创建测试图矩阵
-    train_rated_graph = np.zeros([course_length, user_length])  # 创建训练集里已评价矩阵
+    # all_rated_graph = np.zeros([course_length, user_length])  # 创建所有已评价矩阵
+    # train_graph = np.zeros([course_length, user_length])  # 创建训练图矩阵
+    # test_graph = np.zeros([course_length, user_length])  # 创建测试图矩阵
+    # train_rated_graph = np.zeros([course_length, user_length])  # 创建训练集里已评价矩阵
+    all_rated_graph = sp.lil_matrix((course_length, user_length))  # 创建所有已评价压缩矩阵
+    train_graph = sp.lil_matrix((course_length, user_length))  # 创建训练图压缩矩阵
+    test_graph = sp.lil_matrix((course_length, user_length))  # 创建测试图压缩矩阵
+    train_rated_graph = sp.lil_matrix((course_length, user_length))  # 创建训练集里已评价压缩矩阵
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
 
     for index, row in data.iterrows():
@@ -94,8 +99,15 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
             if (int(row[2]) >= 3.0):
-                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
+                train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                # train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = row[2]
                 train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+
+    # 转换成csr_matrix
+    all_rated_graph = all_rated_graph.tocsr()
+    train_graph = train_graph.tocsr()
+    test_graph = test_graph.tocsr()
+    train_rated_graph = train_rated_graph.tocsr()
 
     return all_rated_graph, train_graph, test_graph, train_rated_graph
 
@@ -115,11 +127,13 @@ def doBigraph():
 
     # 求产品的度
     for rid in range(course_length):
-        kjs[rid] = train_graph[rid, :].sum()
+        # kjs[rid] = train_graph[rid, :].sum()
+        kjs[rid] = train_graph.getrow(rid).sum()
 
     # 求用户的度
     for cid in range(user_length):
-        kls[cid] = train_graph[:, cid].sum()
+        # kls[cid] = train_graph[:, cid].sum()
+        kls[cid] = train_graph.getcol(cid).sum()
 
     # 计算每个用户未选择产品的度
     s = np.ones(user_length)
@@ -135,22 +149,49 @@ def doBigraph():
             kls[i] = 99999
 
     # 求资源配额矩阵
-    weights = np.zeros([course_length, course_length])
+    # weights = sp.lil_matrix((course_length, course_length))
+    # weights = nm.zeros([course_length, course_length])
     # 转换为矩阵乘法和向量除法
     # 设定若干中间值
-    gt = train_graph.T
-    temp = np.zeros([user_length, course_length])
-    for i in range(course_length):
-        temp[:, i] = gt[:, i] / kls
+    gt = train_graph.transpose()
+    gi = gt.getcol(0)
+    kls = kls.reshape(user_length, 1)
+    temp = gi / kls
+    temp = temp.reshape(user_length, 1)
+    temp = sp.csr_matrix(temp)
+    # temp = nm.zeros([user_length, course_length])
+    for i in range(1, course_length):
+        gi = gt.getcol(i)
+        t = gi / kls
+        t = t.reshape(user_length, 1)
+        t = sp.csr_matrix(t)
+        temp = sp.hstack([temp, t])
+        # temp[:, i] = gt[:, i] / kls
+    temp = sp.csr_matrix(temp)
 
     # temp = nm.array(sparkMultiply(train_graph, temp,
     #                              user_length, course_length))
-    temp = np.matmul(train_graph, temp)
-    for i in range(course_length):
-        weights[i, :] = temp[i, :] / kjs
+    # temp = nm.matmul(train_graph, temp)
+    temp = train_graph.dot(temp)
+    temp = sp.csr_matrix(temp)
+    tempi = temp.getrow(0)
+    kjs = kjs.reshape(1, course_length)
+    weights = tempi / kjs
+    weights = weights.reshape(1, course_length)
+    weights = sp.csr_matrix(weights)
+    for i in range(1, course_length):
+        tempi = temp.getrow(i)
+        w = tempi / kjs
+        w = w.reshape(1, course_length)
+        w = sp.csr_matrix(w)
+        weights = sp.vstack([weights, w])
+        # weights[i, :] = temp[i, :] / kjs
+    weights = sp.csr_matrix(weights)
 
     # 求各个用户的资源分配矩阵
-    locate = np.matmul(weights, train_rated_graph)
+    # locate = nm.matmul(weights, train_rated_graph)
+    locate = weights.dot(train_rated_graph)
+    locate = sp.csr_matrix(locate).toarray()
     # locate = nm.array(sparkMultiply(weights, train_rated_graph,
     #                                course_length, user_length))
     # 将算法产生的推荐结果以列表形式存储
