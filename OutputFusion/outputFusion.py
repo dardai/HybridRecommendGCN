@@ -51,7 +51,7 @@ def get_all_users():
     if not dbHandle:
         return None
 
-    sql_user = "select id from account"
+    sql_user = "select id from account5000"
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_user)
     dbHandle.changeCloseFlag()
@@ -301,6 +301,9 @@ def format_result_with_video(userid, y):
             temp_dict["courseId"] = str(row[1])
             temp_dict["description"] = str(temp_course_info[1])
             temp_dict["video"] = str(temp_course_info[2])
+            if float(row[2])> 5:
+                row[2] = 5
+            temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
     return data
 
@@ -320,5 +323,8 @@ def format_result_with_image(userid, y):
             temp_dict["courseClassify"] = str(get_course_classify(row[1], classifyList))
             temp_dict["clickTimes"] = str(get_course_click_times(row[1], click_times))
             temp_dict["description"] = str(temp_course_info[1])
+            if float(row[2])> 5:
+                row[2] = 5
+            temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
     return data
