@@ -270,7 +270,7 @@ class CF:
         return z / sqrt(x * y)
 
     def wirtedata(self):
-        myfile = codecs.open("colldata.txt", mode="w", encoding='utf-8')
+        myfile = codecs.open("file_saved/colldata.txt", mode="w", encoding='utf-8')
         result_data = sorted(tuple(self.recommandList))
         myfile.write("user_id")
         myfile.write("   ")
@@ -281,7 +281,7 @@ class CF:
         myfile.close()
 
     def storeData(self):
-        myfile = codecs.open("colldata.txt", mode="a", encoding='utf-8')
+        myfile = codecs.open("file_saved/colldata.txt", mode="a", encoding='utf-8')
         result_data = sorted(tuple(self.result))
         for row in result_data:
             myfile.write(str(row[0]))

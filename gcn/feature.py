@@ -6,7 +6,8 @@ import numpy as np
 from enum import Enum, IntEnum
 
 from databaseIo import DatabaseIo
-from globalConst import DataBaseOperateType, getEnumValue
+from globalConst import DataBaseOperateType, getEnumValue, DataBaseQuery
+
 
 import logging
 
@@ -490,7 +491,8 @@ def makeFeature():
 def getAllUserAndCourse():
     logging.warning(u"运行日志：获取所有的用户和课程")
     u_nodes, v_nodes, ratings = [], [], []
-    with open('gcn/toGcn.csv', 'r') as f:
+    # with open('gcn/toGcn.csv', 'r') as f:
+    with open('file_saved/toGcn.csv', 'r') as f:
     # with open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv', 'r') as f:
         reader = csv.reader(f)
         for row in reader:
@@ -510,7 +512,8 @@ def getAllUserAndCourse():
 def getAllUserInfo(user_dict):
     logging.warning(u"运行日志：获取所有的用户信息")
     # sql = 'SELECT user_id, points, position, gender FROM user_basic_info'
-    sql = """select id from account5000"""
+    # sql = """select id from account5000"""
+    sql = DataBaseQuery["user_id"]
     dbHandle = DatabaseIo()
 
     dataList = dbHandle.doSql(DataBaseOperateType.SearchMany, sql)
@@ -524,7 +527,8 @@ def getAllUserInfo(user_dict):
 def getAllCourseInfo(course_dict):
     logging.warning(u"运行日志：获取所有的课程信息")
     # sql = 'SELECT id, course_differ, course_type FROM course_info'
-    sql = 'SELECT id, classify_id FROM course5000'
+    # sql = 'SELECT id, classify_id FROM course5000'
+    sql = DataBaseQuery["feature_classify"]
 
     dbHandle = DatabaseIo()
 

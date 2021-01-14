@@ -9,7 +9,7 @@ import logging
 
 from decimal import Decimal
 from utils.extends import formatDataByType, makeDic
-from globalConst import DataBaseOperateType, SetType
+from globalConst import DataBaseOperateType, SetType, DataBaseQuery
 from changedPredeal import updateCourseDrChanged
 from utils.databaseIo import DatabaseIo
 import scipy.sparse as sp
@@ -19,11 +19,14 @@ def getDataFromDB():
     if not dbHandle:
         return None
 
-    sql_dr = """SELECT * FROM course_dr5000_changed"""
+    # sql_dr = """SELECT * FROM course_dr5000_changed"""
+    sql_dr = DataBaseQuery["online_course_dr_changed"]
     # sql_course = "select id , system_course_id ,course_name from course_info"
-    sql_course = """select id, name from course5000"""
+    # sql_course = """select id, name from course5000"""
+    sql_course = DataBaseQuery["course_info"]
     # sql_user = """select user_id from user_basic_info"""
-    sql_user = """select id from account5000"""
+    # sql_user = """select id from account5000"""
+    sql_user = DataBaseQuery["user_id"]
 
     result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_dr)
@@ -220,7 +223,8 @@ def doBigraph():
 def storeData(recommend_result):
     #修改文件目录
     #myfile = codecs.open("C:/Users/Administrator/Desktop/HybridRecommendGCN/online/changedBigraph.csv", mode="w", encoding='utf-8')
-    myfile = codecs.open("changedBigraph.csv", mode="w", encoding='utf-8')
+    # myfile = codecs.open("changedBigraph.csv", mode="w", encoding='utf-8')
+    myfile = codecs.open("../file_saved/changedBigraph.csv", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     df = pd.DataFrame(result_data)
 

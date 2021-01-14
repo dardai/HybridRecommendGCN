@@ -4,14 +4,16 @@
 import pandas as pd
 import logging
 from utils.databaseIo import DatabaseIo
-from globalConst import DataBaseOperateType
+from globalConst import DataBaseOperateType, DataBaseQuery
 
 def fusion():
 
     logging.warning(u"运行日志：在线模块数据融合")
     print ("run fusion...")
-    differAllData = pd.read_csv('dislikeData.csv',names=['uid', 'cid', 'score'])
-    changedData = pd.read_csv('changedBigraph.csv',names=['uid', 'cid', 'score'])
+    # differAllData = pd.read_csv('dislikeData.csv',names=['uid', 'cid', 'score'])
+    # changedData = pd.read_csv('changedBigraph.csv',names=['uid', 'cid', 'score'])
+    differAllData = pd.read_csv('../file_saved/dislikeData.csv',names=['uid', 'cid', 'score'])
+    changedData = pd.read_csv('../file_saved/changedBigraph.csv',names=['uid', 'cid', 'score'])
 
     dbHandle = DatabaseIo()
     if not dbHandle:
@@ -27,11 +29,12 @@ def fusion():
         #ct_list储存mergeData中对应用户-课程的点击数
         ct_list = []
         for i in range(len(muid)):
-            sql_select_click_times = '''select click_times
-                    FROM account_course5000
-                    WHERE user_id = '{0}'
-                    AND course_id = '{1}'
-                    '''
+            # sql_select_click_times = '''select click_times
+            #         FROM account_course5000
+            #         WHERE user_id = '{0}'
+            #         AND course_id = '{1}'
+            #         '''
+            sql_select_click_times = DataBaseQuery["online_select_click_times"]
 
             result = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                     sql=sql_select_click_times.format(muid[i],mcid[i]))
@@ -71,10 +74,13 @@ def fusion():
         print ("no changed data..")
 
 
-    baseData = pd.read_csv('../resultToRoc.csv')
+    # baseData = pd.read_csv('../resultToRoc.csv')
+    baseData = pd.read_csv('../file_saved/resultToRoc.csv')
     updatedBaseData = baseData.append(fusionData)
     updatedBaseData.drop_duplicates(subset=['uid','cid'],keep='last',inplace=True)
-    updatedBaseData.to_csv('../resultToRoc.csv',index=None)
-    updatedBaseData.to_csv('online.csv', header=None, index=None)
+    # updatedBaseData.to_csv('../resultToRoc.csv',index=None)
+    updatedBaseData.to_csv('../file_saved/resultToRoc.csv',index=None)
+    # updatedBaseData.to_csv('online.csv', header=None, index=None)
+    updatedBaseData.to_csv('../file_saved/online.csv', header=None, index=None)
 
     return fusionData

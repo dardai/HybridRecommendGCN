@@ -4,7 +4,7 @@
 import pandas as pd
 import logging
 from utils.databaseIo import DatabaseIo
-from globalConst import DataBaseOperateType
+from globalConst import DataBaseOperateType, DataBaseQuery
 from changedPredeal import getChangedData
 from gcn.feature import transformCourseType
 
@@ -16,10 +16,11 @@ def differFusion(d):
     #                                 FROM course_info
     #                                 WHERE id = '{0}'
     #                                 '''
-    sql_select_differ = '''select classify_id
-                                        FROM course_classify5000
-                                        WHERE id = '{0}'
-                                        '''
+    # sql_select_differ = '''select classify_id
+    #                                     FROM course_classify5000
+    #                                     WHERE id = '{0}'
+    #                                     '''
+    sql_select_differ = DataBaseQuery["online_select_differ"]
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
@@ -43,7 +44,8 @@ def differFusion(d):
         uclist.append(temp)
 
     # print uclist
-    allData = pd.read_csv('../resultToRoc.csv')
+    # allData = pd.read_csv('../resultToRoc.csv')
+    allData = pd.read_csv('../file_saved/resultToRoc.csv')
     auid = allData['uid'].values.tolist()
     acid = allData['cid'].values.tolist()
     avalue = allData['score'].values.tolist()
@@ -63,6 +65,7 @@ def differFusion(d):
 
     differData = pd.DataFrame({0:auid,1:acid,2:avalue})
 
-    differData.to_csv('differData.csv',index=None,header=None)
+    # differData.to_csv('differData.csv',index=None,header=None)
+    differData.to_csv('../file_saved/differData.csv',index=None,header=None)
     print ("differFusion success")
     return differData

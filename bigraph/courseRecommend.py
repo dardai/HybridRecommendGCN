@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as nm
 import random
 import codecs
-from globalConst import DataBaseOperateType, SetType
+from globalConst import DataBaseOperateType, SetType, DataBaseQuery
 from utils.extends import formatDataByType, makeDic
 from utils.databaseIo import DatabaseIo
 from roc.rocUtils import saveBgInputMartix,rocLocate
@@ -66,11 +66,14 @@ def getDataFromDB():
     if not dbHandle:
         return None
 
-    sql_dr = """SELECT * FROM course_dr5000"""
+    # sql_dr = """SELECT * FROM course_dr5000"""
+    sql_dr = DataBaseQuery["course_dr"]
     #sql_course = "select id , system_course_id ,course_name from course_info"
-    sql_course = """select id, name from course5000"""
+    # sql_course = """select id, name from course5000"""
+    sql_course = DataBaseQuery["course_info"]
     #sql_user = """select user_id from user_basic_info"""
-    sql_user = """select id from account5000"""
+    # sql_user = """select id from account5000"""
+    sql_user = DataBaseQuery["user_id"]
 
     result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                sql=sql_dr)
@@ -293,7 +296,8 @@ def doBigraph():
 
 def storeData(recommend_result):
     logging.warning(u"运行日志：二部图推荐结果保存")
-    myfile = codecs.open("data.txt", mode="w", encoding='utf-8')
+    # myfile = codecs.open("data.txt", mode="w", encoding='utf-8')
+    myfile = codecs.open("file_saved/data.txt", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     myfile.write("user_id")
     myfile.write("   ")

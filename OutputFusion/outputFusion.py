@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from utils.databaseIo import DatabaseIo
-from globalConst import DataBaseOperateType, SetType
+from globalConst import DataBaseOperateType, SetType, DataBaseQuery
 import pandas as pd
 import numpy as np
 from pandas.core.frame import DataFrame
@@ -35,11 +35,13 @@ def get_user_course():
     if not dbHandle:
         return None
 
-    sql_user_course = "select account_id, course_id, click_times, score from account_course5000"
+    # sql_user_course = "select account_id, course_id, click_times, score from account_course5000"
+    sql_user_course = DataBaseQuery["user_course"]
     result_user_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                         sql=sql_user_course)
 
-    sql_user_course_changed = "select account_id, course_id, click_times, score from account_course5000"
+    # sql_user_course_changed = "select account_id, course_id, click_times, score from account_course5000"
+    sql_user_course_changed = DataBaseQuery["user_course_changed"]
     result_user_course_changed = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                                 sql=sql_user_course_changed)
     dbHandle.changeCloseFlag()
@@ -56,7 +58,8 @@ def get_all_users():
     if not dbHandle:
         return None
 
-    sql_user = "select id from account5000"
+    # sql_user = "select id from account5000"
+    sql_user = DataBaseQuery["user_id"]
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                  sql=sql_user)
     dbHandle.changeCloseFlag()
@@ -78,7 +81,8 @@ def popular_courses():
             course_click_times[row[1]] = course_click_times[row[1]] + int(row[2])
     result = sort_by_value(course_click_times)
     result_dataframe = DataFrame(result)
-    result_dataframe.to_csv('popular.csv', index=None, header=None)
+    # result_dataframe.to_csv('popular.csv', index=None, header=None)
+    result_dataframe.to_csv('file_saved/popular.csv', index=None, header=None)
     return result
 
 
@@ -99,7 +103,8 @@ def high_score_courses():
         course_score[key] = course_score_sum[key][0] / course_score_sum[key][1]
     result = sort_by_value(course_score)
     result_dataframe = DataFrame(result)
-    result_dataframe.to_csv('highScore.csv', index=None, header=None)
+    # result_dataframe.to_csv('highScore.csv', index=None, header=None)
+    result_dataframe.to_csv('file_saved/highScore.csv', index=None, header=None)
     return result
 
 
@@ -154,7 +159,8 @@ def get_course_num(y):
 def get_online_result():
     logging.warning(u"运行日志：获取在线推荐模块的推荐结果")
     # online_run()
-    online = pd.read_csv('online/online.csv', names=['uid', 'cid', 'value']).astype(str)
+    # online = pd.read_csv('online/online.csv', names=['uid', 'cid', 'value']).astype(str)
+    online = pd.read_csv('file_saved/online.csv', names=['uid', 'cid', 'value']).astype(str)
     online_list = online.values.tolist()
     result = sorted(online_list, key=lambda x: x[2], reverse=True)
     return result
@@ -206,7 +212,8 @@ def fusion(y):
             result.append(temp)
     result = sorted(result, key=lambda k: k[2], reverse=True)
     result_dataframe = DataFrame(result)
-    result_dataframe.to_csv('outputFusion.csv', index=None, header=None)
+    # result_dataframe.to_csv('outputFusion.csv', index=None, header=None)
+    result_dataframe.to_csv('file_saved/outputFusion.csv', index=None, header=None)
     return result_dataframe, popular_course
 
 
@@ -248,7 +255,8 @@ def get_couse_info():
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
-    sql_course = "select id, name from course5000"
+    # sql_course = "select id, name from course5000"
+    sql_course = DataBaseQuery["course_info"]
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     dbHandle.changeCloseFlag()
@@ -262,7 +270,8 @@ def get_couse_info_with_video():
     if not dbHandle:
         return None
     # 先用图片替代模拟视频
-    sql_course = "select id, name, image, description from course5000"
+    # sql_course = "select id, name, image, description from course5000"
+    sql_course = DataBaseQuery["interface_video"]
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     dbHandle.changeCloseFlag()
@@ -274,9 +283,10 @@ def get_course_info_with_image():
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
-    # 先用图片替代模拟视频
-    sql_course = "select id, name, image, description from course5000"
-    sql_classify = "select id, course_name, classify_name from course_classify5000"
+    # sql_course = "select id, name, image, description from course5000"
+    sql_course = DataBaseQuery["interface_image"]
+    # sql_classify = "select id, course_name, classify_name from course_classify5000"
+    sql_classify = DataBaseQuery["classify_info"]
     result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_course)
     result_course_classify = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,

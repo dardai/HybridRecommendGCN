@@ -7,7 +7,8 @@ import pandas as pd
 def storeDataAsGCNInput(recommend_result):
     #修改文件目录
     #myfile = codecs.open("C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/toGcn.csv", mode="w", encoding='utf-8')
-    myfile = codecs.open("gcn/toGcn.csv", mode="w", encoding='utf-8')
+    # myfile = codecs.open("gcn/toGcn.csv", mode="w", encoding='utf-8')
+    myfile = codecs.open("file_saved/toGcn.csv", mode="w", encoding='utf-8')
     result_data = sorted(tuple(recommend_result))
     df = pd.DataFrame(result_data)
     df = df.drop(2,axis=1)

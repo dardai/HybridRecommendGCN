@@ -4,7 +4,7 @@
 import pandas as pd
 import logging
 from utils.databaseIo import DatabaseIo
-from globalConst import DataBaseOperateType
+from globalConst import DataBaseOperateType, DataBaseQuery
 
 from gcn.feature import transformCourseType
 
@@ -16,16 +16,18 @@ def dislikeFusion():
     #                                 FROM course_info
     #                                 WHERE id = '{0}'
     #                                 '''
-    sql_select_dislike = '''select classify_id
-                                        FROM course_classify
-                                        WHERE id = '{0}'
-                                        '''
+    # sql_select_dislike = '''select classify_id
+    #                                     FROM course_classify
+    #                                     WHERE id = '{0}'
+    #                                     '''
+    sql_select_dislike = DataBaseQuery["online_select_dislike"]
     dbHandle = DatabaseIo()
     if not dbHandle:
         return None
 
 
-    differData = pd.read_csv('differData.csv',names=['uid','cid','score'])
+    # differData = pd.read_csv('differData.csv',names=['uid','cid','score'])
+    differData = pd.read_csv('../file_saved/differData.csv',names=['uid','cid','score'])
     print differData
     group = differData.groupby(['uid'])
     grouped_cData = pd.DataFrame({'cid':group['cid'].apply(list)}).reset_index()
@@ -45,7 +47,8 @@ def dislikeFusion():
         uclist.append(temp)
 
     # print uclist
-    allData = pd.read_csv('../resultToRoc.csv')
+    # allData = pd.read_csv('../resultToRoc.csv')
+    allData = pd.read_csv('../file_saved/resultToRoc.csv')
     auid = allData['uid'].values.tolist()
     acid = allData['cid'].values.tolist()
     avalue = differData['score'].values.tolist()
@@ -68,7 +71,8 @@ def dislikeFusion():
 
     dislikeData = pd.DataFrame({0:auid,1:acid,2:avalue})
     print dislikeData
-    dislikeData.to_csv('dislikeData.csv',index=None,header=None)
+    # dislikeData.to_csv('dislikeData.csv',index=None,header=None)
+    dislikeData.to_csv('../file_saved/dislikeData.csv',index=None,header=None)
     print ("dislikeFusion success")
     return dislikeData
 

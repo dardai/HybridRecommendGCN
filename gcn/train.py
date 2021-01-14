@@ -200,8 +200,8 @@ for i in class_values:
     # build individual binary rating matrices (supports) for each rating
     # support_unnormalized = sp.csr_matrix(adj_train_int == i + 1, dtype=np.float32)
     support_unnormalized = sp.csr_matrix(adj_train_int == i, dtype=np.float32)
-    print(support_unnormalized)
-    print(support_unnormalized.nnz)
+    # print(support_unnormalized)
+    # print(support_unnormalized.nnz)
 
     # 2020.12.04暂时注释掉，不然会exit 报错
     # if support_unnormalized.nnz == 0 and DATASET != 'yahoo_music':

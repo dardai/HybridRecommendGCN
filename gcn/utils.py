@@ -43,7 +43,8 @@ def print_predict_d(labels, u_indices, v_indices):
 
 def write_csv(labels, u_indices, v_indices):
     print("-----------write_csv--------------")
-    f = open('result.csv', 'wb+')
+    # f = open('result.csv', 'wb+')
+    f = open('file_saved/result.csv', 'wb+')
     content = csv.writer(f)
     for user, vedio, score in zip(u_indices, v_indices, labels):
         content.writerow([user, vedio, score])
@@ -53,7 +54,8 @@ def write_csv2(labels, u_indices, v_indices):
     gcn_u_dictr = np.load('u_dictr.npy', allow_pickle=True).item()
     gcn_v_dictr = np.load('v_dictr.npy', allow_pickle=True).item()
     print("-----------write_csv2--------------")
-    f = open('resultToRoc.csv', 'wb+')
+    # f = open('resultToRoc.csv', 'wb+')
+    f = open('file_saved/resultToRoc.csv', 'wb+')
     # f = open('C:/Users/Administrator/Desktop/HybridRecommendGCN/gcn/resultToRoc.csv', 'wb+')
     content = csv.writer(f)
     content.writerow(['uid', 'cid', 'score'])
