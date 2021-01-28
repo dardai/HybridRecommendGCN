@@ -18,11 +18,14 @@ def getdata(flag = True):
                                 names=['user_id', 'item_id', 'rating', 'timestamp'])
         user_data = pd.read_csv('../dgl/ml-100k/u.user', sep='|', header=None, encoding='latin1')
         item_data = pd.read_csv('../dgl/ml-100k/u.item', sep='|', header=None, encoding='latin1')
+        test_data = test_data[test_data['user_id'].isin(train_data['user_id']) &
+                              test_data['item_id'].isin(train_data['item_id'])]
 
         train_data = train_data.values.tolist()
         test_data = test_data.values.tolist()
         user_data = user_data.values.tolist()
         item_data = item_data.values.tolist()
+        # print item_data
         # print item_data
     else:
         dbHandle = DatabaseIo()
@@ -64,7 +67,7 @@ def createDict(data):
         else:
             user_dict[recode[0]] = [(recode[1], recode[2])]
         if recode[1] in item_dict:
-            item_dict[recode[2]].append(recode[0])
+            item_dict[recode[1]].append(recode[0])
         else:
             item_dict[recode[1]] = [recode[0]]
     return user_dict, item_dict
@@ -113,15 +116,15 @@ def ItemSimilarity(user_dict):
 
     return W
 
-def makeRecommend(user_dict, K):
+def makeRecommend(train_user_dict, test_user_dict, K):
     print("make recommend")
     rank = {}
     result = []
-    W = ItemSimilarity(user_dict)
-    for user_id in user_dict.keys():
-        for i, score in user_dict[user_id]:
+    W = ItemSimilarity(train_user_dict)
+    for user_id in test_user_dict.keys():
+        for i, score in test_user_dict[user_id]:
             for j, wj in sorted(W[i].items(), key = lambda x:x[1], reverse = True)[0 : K]:
-                if j in user_dict[user_id]:
+                if j in test_user_dict[user_id]:
                     continue
                 if j not in rank.keys():
                     rank[j] = 0
@@ -136,10 +139,66 @@ def makeRecommend(user_dict, K):
             result.append(temp_list)
     return result
 
-train_data, test_data, user_data, item_data = getdata(False)
-user_dict, item_dict = createDict(train_data)
-result = makeRecommend(user_dict, 10)
-print result
+def makeClassifyDict(item_data):
+    print("make classify dict")
+    # 示例{“课程id”：[类别1、类别2、类别3]}
+    classifydict = {}
+    item = pd.DataFrame(item_data)
+    item = item.values.tolist()
+    for row in item:
+        if row[0] not in classifydict.keys():
+            classifydict[row[0]] = []
+            for i in range(5, 24):
+                if row[i] == 1:
+                    classifydict[row[0]].append(i)
+        else:
+            continue
+    return classifydict
+
+def getCoverage(result, item_data):
+    print("get coverage rate")
+    # 记录推荐类别的字典
+    classify_num_dict = {}
+    # 记录物品对应物品分类的字典
+    classify = makeClassifyDict(item_data)
+    recommend_result = pd.DataFrame(result)
+    # 获取推荐列表中不同物品的个数
+    recommend_length = len(recommend_result[1].value_counts())
+    item_id = pd.DataFrame(recommend_result[1].value_counts()).values.tolist()
+    for row in item_id:
+        for c in classify[row[0]]:
+            if  isinstance(c, int):
+                if c not in classify_num_dict.keys():
+                    classify_num_dict[c] = 1
+                else:
+                    continue
+            else:
+                for i in c:
+                    if i not in classify_num_dict.keys():
+                        classify_num_dict[i] = 1
+                    else:
+                        continue
+    # print classify_num_dict
+    item_length = len(item_data)
+    # print recommend_length
+    # print item_length
+    cov = (recommend_length * 1.0) / (item_length * 1.0)
+    classify_cov = (len(classify_num_dict) * 1.0) / 19.0
+    # 计算列表覆盖率
+    print("the rate of coverage: ")
+    print(cov)
+    # 计算物品类别覆盖率
+    print("the rate of classify coverage: ")
+    print(classify_cov)
+
+
+
+train_data, test_data, user_data, item_data = getdata(True)
+train_user_dict, train_item_dict = createDict(train_data)
+test_user_dict, test_item_dict = createDict(test_data)
+result = makeRecommend(train_user_dict, test_user_dict, 20)
+# print result
+getCoverage(result, item_data)
 recommend_result = pd.DataFrame(result)
 recommend_result.to_csv("../file_saved/itemCF.csv", header = False, index = False)
 
