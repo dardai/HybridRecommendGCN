@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from utils.databaseIo import DatabaseIo
+from utils.redis_database import pool_recommend, pool_popular, pool_highscore
 from globalConst import DataBaseOperateType, SetType, DataBaseQuery
 import pandas as pd
 import numpy as np
 from pandas.core.frame import DataFrame
 import logging
+import redis
 
 # np.set_printoptions(suppress=True, threshold=np.nan)
 pd.set_option('float_format', lambda x: '%.3f' % x)
@@ -83,6 +85,7 @@ def popular_courses():
     result_dataframe = DataFrame(result)
     # result_dataframe.to_csv('popular.csv', index=None, header=None)
     result_dataframe.to_csv('file_saved/popular.csv', index=None, header=None)
+    print result_dataframe
     return result
 
 
@@ -311,8 +314,8 @@ def format_result(userid, y):
             temp_dict["courseId"] = str(row[1])
             # temp_dict["courseName"] = str(get_course_name(int(row[1]), courseList))
             temp_dict["courseName"] = str(get_course_name(row[1], courseList))
-            if float(row[2]) > 5:
-                row[2] = 5
+            # if float(row[2]) > 5:
+            #     row[2] = 5
             temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
     return data
@@ -361,3 +364,51 @@ def format_result_with_image(userid, y):
             temp_dict["recommendWays"] = str(row[2])
             data.append(temp_dict)
     return data
+
+# 将混合推荐结果保存在redis上
+def recommend_cache(recommend_list):
+    con = redis.Redis(connection_pool = pool_recommend)
+    try:
+        key = con.keys()
+        for i in range(len(key)):
+            con.delete(key[i])
+        # recommend = pd.read_csv("outputFusion.csv").astype(str)
+        # recommend_list = recommend.values.tolist()
+        for row in recommend_list:
+            con.zadd(row[0], {row[1]: row[2]})
+    except Exception as e:
+        print e
+    finally:
+        del con
+
+# 将热门课程结果保存在redis上
+def popular_cache(popular_list):
+    con = redis.Redis(connection_pool = pool_popular)
+    try:
+        key = con.keys()
+        for i in range(len(key)):
+            con.delete(key[i])
+        # popular = pd.read_csv("popular.csv").astype(str)
+        # popular_list = popular.values.tolist()
+        for row in popular_list:
+            con.set(row[0], row[1])
+    except Exception as e:
+        print e
+    finally:
+        del con
+
+# 将高评分课程结果保存在redis上
+def highscore_cache(highscore_list):
+    con = redis.Redis(connection_pool = pool_highscore)
+    try:
+        key = con.keys()
+        for i in range(len(key)):
+            con.delete(key[i])
+        # highscore = pd.read_csv("highScore.csv").astype(str)
+        # highscore_list = highscore.values.tolist()
+        for row in highscore_list:
+            con.set(row[0], row[1])
+    except Exception as e:
+        print e
+    finally:
+        del con
