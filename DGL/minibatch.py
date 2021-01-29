@@ -13,13 +13,18 @@ class MinibatchSampler(object):
         users = torch.stack(users)
         items = torch.stack(items)
         ratings = torch.stack(ratings)
-
         # 1 创建二部图
         pair_graph = dgl.heterograph(
             {('user', 'watched', 'item'): (users, items)},
             num_nodes_dict={'user': self.graph.num_nodes('user'),
                             'item': self.graph.num_nodes('item')}
         )
+
+        u = users.tolist()
+        i = items.tolist()
+        real_data = torch.tensor(list(zip(u,i)),dtype = torch.int)
+        pair_graph.edata['real_data'] = real_data
+
 
         # 2 压缩二部图
         pair_graph = dgl.compact_graphs(pair_graph)

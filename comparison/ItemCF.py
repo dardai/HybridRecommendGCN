@@ -12,12 +12,12 @@ from utils.extends import formatDataByType
 def getdata(flag = True):
     print("get data")
     if flag == True:
-        train_data = pd.read_csv('../dgl/ml-100k/ua.base', sep='\t', header=None,
+        train_data = pd.read_csv('../DGL/ml-100k/ua.base', sep='\t', header=None,
                                  names=['user_id', 'item_id', 'rating', 'timestamp'])
-        test_data = pd.read_csv('../dgl/ml-100k/ua.test', sep='\t', header=None,
+        test_data = pd.read_csv('../DGL/ml-100k/ua.test', sep='\t', header=None,
                                 names=['user_id', 'item_id', 'rating', 'timestamp'])
-        user_data = pd.read_csv('../dgl/ml-100k/u.user', sep='|', header=None, encoding='latin1')
-        item_data = pd.read_csv('../dgl/ml-100k/u.item', sep='|', header=None, encoding='latin1')
+        user_data = pd.read_csv('../DGL/ml-100k/u.user', sep='|', header=None, encoding='latin1')
+        item_data = pd.read_csv('../DGL/ml-100k/u.item', sep='|', header=None, encoding='latin1')
         test_data = test_data[test_data['user_id'].isin(train_data['user_id']) &
                               test_data['item_id'].isin(train_data['item_id'])]
 

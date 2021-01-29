@@ -57,8 +57,8 @@ class GCMCLayer(nn.Module):
             result = self.heteroconv(block, (src_features, dst_features))
             return result['user'], result['item']
 
-
-class GCMCRating(nn.Module):
+#fsl
+class GCMCRating1(nn.Module):
     # def __init__(self, num_users, num_items, hidden_dims, num_ratings, num_layers,
     #              num_user_age_bins, num_user_genders, num_user_occupations, num_item_genres):
     def __init__(self, num_users, num_items, hidden_dims, num_ratings, num_layers,
@@ -70,7 +70,6 @@ class GCMCRating(nn.Module):
 
         # self.U_age = nn.Embedding(num_user_age_bins, hidden_dims)
         self.U_gender = nn.Embedding(num_user_genders, hidden_dims)
-        # self.U_occupation = nn.Embedding(num_user_occupations, hidden_dims)
         self.I_genres = nn.Embedding(num_item_genres, hidden_dims)
         self.layers = nn.ModuleList([
             GCMCLayer(hidden_dims, num_ratings) for _ in range(num_layers)
@@ -104,6 +103,52 @@ class GCMCRating(nn.Module):
             pair_graph.apply_edges(fn.u_dot_v('h', 'h', 'r'))
             return pair_graph.edata['r']
 
+#ml
+class GCMCRating2(nn.Module):
+    # def __init__(self, num_users, num_items, hidden_dims, num_ratings, num_layers,
+    #              num_user_age_bins, num_user_genders, num_user_occupations, num_item_genres):
+    def __init__(self, num_users, num_items, hidden_dims, num_ratings, num_layers,
+                 num_user_genders, num_item_genres):
+        super().__init__()
+
+        self.user_embeddings = nn.Embedding(num_users, hidden_dims)
+        self.item_embeddings = nn.Embedding(num_items, hidden_dims)
+
+        # self.U_age = nn.Embedding(num_user_age_bins, hidden_dims)
+        self.U_gender = nn.Embedding(num_user_genders, hidden_dims)
+        # self.U_occupation = nn.Embedding(num_user_occupations, hidden_dims)
+        self.I_genres = nn.Linear(num_item_genres, hidden_dims)
+        self.layers = nn.ModuleList([
+            GCMCLayer(hidden_dims, num_ratings) for _ in range(num_layers)
+        ])
+
+        self.W = nn.Linear(hidden_dims, hidden_dims)
+        self.V = nn.Linear(hidden_dims, hidden_dims)
+
+    def forward(self, blocks):
+        user_embeddings = self.user_embeddings(blocks[0].srcnodes['user'].data[dgl.NID])
+        item_embeddings = self.item_embeddings(blocks[0].srcnodes['item'].data[dgl.NID])
+
+        # user_embeddings = user_embeddings + self.U_age(blocks[0].srcnodes['user'].data['age'])
+        user_embeddings = user_embeddings + self.U_gender(blocks[0].srcnodes['user'].data['gender'])
+        # user_embeddings = user_embeddings + self.U_occupation(blocks[0].srcnodes['user'].data['occupation'])
+        item_embeddings = item_embeddings + self.I_genres(blocks[0].srcnodes['item'].data['genres'])
+
+
+        for block, layer in zip(blocks, self.layers):
+            user_embeddings, item_embeddings = layer(block, user_embeddings, item_embeddings)
+
+        user_embeddings = self.W(user_embeddings)
+        item_embeddings = self.V(item_embeddings)
+
+        return user_embeddings, item_embeddings
+
+    def compute_score(self, pair_graph, user_embeddings, item_embeddings):
+        with pair_graph.local_scope():
+            pair_graph.nodes['user'].data['h'] = user_embeddings
+            pair_graph.nodes['item'].data['h'] = item_embeddings
+            pair_graph.apply_edges(fn.u_dot_v('h', 'h', 'r'))
+            return pair_graph.edata['r']
 
 def rmse(pred, label):
     return ((pred - label) ** 2).mean().sqrt()

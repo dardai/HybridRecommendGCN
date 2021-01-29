@@ -15,15 +15,16 @@ from utils.databaseIo import DatabaseIo
 from utils.extends import formatDataByType
 import random
 
-
-def loadData(flag = True):
-    if flag == True:
-        all_data = pd.read_csv('../dgl/ml-100k/u.data', sep='\t', header=None,
+#False就用movielens，True就用复深蓝数据
+FSLflag = False
+def loadData(FSLflag = False):
+    if FSLflag == False:
+        all_data = pd.read_csv('../DGL/ml-100k/u.data', sep='\t', header=None,
                                names=['user_id', 'item_id', 'rating', 'timestamp'])
-        # test_data = pd.read_csv('../dgl/ml-100k/ua.test', sep='\t', header=None,
+        # test_data = pd.read_csv('../DGL/ml-100k/ua.test', sep='\t', header=None,
         #                         names=['user_id', 'item_id', 'rating', 'timestamp'])
-        user_data = pd.read_csv('../dgl/ml-100k/u.user', sep='|', header=None, encoding='latin1')
-        item_data = pd.read_csv('../dgl/ml-100k/u.item', sep='|', header=None, encoding='latin1')
+        user_data = pd.read_csv('../DGL/ml-100k/u.user', sep='|', header=None, encoding='latin1')
+        item_data = pd.read_csv('../DGL/ml-100k/u.item', sep='|', header=None, encoding='latin1')
         # test_data = test_data[test_data['user_id'].isin(train_data['user_id']) &
         #                       test_data['item_id'].isin(train_data['item_id'])]
         # u_data = user_data[[0,1,2,3,4]]
@@ -32,6 +33,9 @@ def loadData(flag = True):
         # i_data.columns = ['item_id','title','release_date','video_release_date','IMDb_URL','unknown','Action','Adventure','Animation','Children',
         #                   'Comedy','Crime','Documentary','Drama','Fantasy','Film-Noir','Horror','Musical','Mystery','Romance','Sci-Fi','Thriller',
         #                   'War','Western']
+
+        return all_data, user_data, item_data
+
     else:
         dbHandle = DatabaseIo()
         if not dbHandle:
@@ -39,10 +43,13 @@ def loadData(flag = True):
         sql_dr = DataBaseQuery["course_dr"]
         sql_course = DataBaseQuery["course_info"]
         sql_user = DataBaseQuery["user_id"]
+        sql_classify = DataBaseQuery["classify_info"]
         result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_dr)
         result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                        sql=sql_course)
+        result_classify = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                       sql=sql_classify)
         dbHandle.changeCloseFlag()
         result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                      sql=sql_user)
@@ -50,9 +57,9 @@ def loadData(flag = True):
         all_data = drList
         user_data = formatDataByType(SetType.SetType_Set, result_user)
         item_data = formatDataByType(SetType.SetType_List, result_course)
+        classify_data = formatDataByType(SetType.SetType_List, result_classify)
 
-    # return all_data,user_data,item_data,u_data,i_data
-    return all_data,user_data,item_data
+        return all_data,user_data,item_data,classify_data
 
 def MLP(all_data, u_data, i_data,epoch,batch_size):
     # all_data, user_data, item_data, u_data, i_data = loadData()
@@ -144,7 +151,7 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
     result.to_csv('../file_saved/MLPresult.csv',index=None)
     return result
 
-def makeClassifyDict(item_data):
+def makeClassifyDict(item_data,FSLflag):
     print("make classify dict")
     # 示例{“课程id”：[类别1、类别2、类别3]}
     classifydict = {}
@@ -153,29 +160,37 @@ def makeClassifyDict(item_data):
     for row in item:
         if row[0] not in classifydict.keys():
             classifydict[row[0]] = []
-            for i in range(5, 24):
-                if row[i] == 1:
-                    classifydict[row[0]].append(i)
+            if FSLflag == False:
+                for i in range(5, 24):
+                    if row[i] == 1:
+                        classifydict[row[0]].append(i)
+            else:
+                classifydict[row[0]].append(row[1])
         else:
             continue
     return classifydict
 
-def recommend(item_data,topK):
+def recommend(item_data,topK,FSLflag,classify_num=0):
     result = pd.read_csv('../file_saved/MLPresult.csv')
     result_topK = result.groupby(['user_id']).head(topK).reset_index(drop=True)
 
     # 计算列表覆盖率
     recommend_length = len(result_topK['item_id'].value_counts())
     item_length = len(item_data)
-    print(recommend_length/item_length)
+    cov = recommend_length/item_length
+    print("the rate of coverage: ")
+    print(cov)
 
     # 计算物品类别覆盖率
     # 记录推荐类别的字典
     classify_num_dict = {}
-    classify = makeClassifyDict(item_data)
+    classify = makeClassifyDict(item_data,FSLflag)
     item_id = result_topK['item_id'].value_counts().values.tolist()
     for row in item_id:
+        print("row",row)
+        print("cr",classify[row])
         for c in classify[row]:
+            print("c:",c)
             if isinstance(c, int):
                 if c not in classify_num_dict.keys():
                     classify_num_dict[c] = 1
@@ -187,11 +202,26 @@ def recommend(item_data,topK):
                         classify_num_dict[i] = 1
                     else:
                         continue
-    classify_cov = (len(classify_num_dict) * 1.0) / 19.0
+    if FSLflag == False:
+        classify_cov = (len(classify_num_dict) * 1.0) / 19.0
+    else:
+        classify_num = classify_num
+        classify_cov = (len(classify_num_dict) * 1.0) / classify_num
+    print("the rate of classify coverage: ")
     print(classify_cov)
 
 
+if FSLflag == False:
+    all_data, user_data, item_data = loadData()
+    classify_num = None
+else:
+    all_data,user_data,item_data,classify_data = loadData()
+    classify_id = classify_data['classify_id'].values.tolist()
+    classify_num = len(set(classify_id))
 
-all_data, user_data, item_data = loadData()
-MLP(all_data, user_data, item_data,epoch=10,batch_size=32)
-recommend(item_data,topK=10)
+MLP(all_data, user_data, item_data,epoch=1,batch_size=32)
+
+if FSLflag == False:
+    recommend(item_data, topK=10, FSLflag=FSLflag)
+else:
+    recommend(item_data,topK=10, FSLflag = FSLflag,classify_num = classify_num)

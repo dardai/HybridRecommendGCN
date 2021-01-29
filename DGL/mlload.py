@@ -4,12 +4,12 @@ from globalConst import DataBaseOperateType, DataBaseQuery
 
 def get_ml_100k():
     # 数据加载
-    train_data = pd.read_csv('./ml-100k/ua.base', sep='\t', header=None,
+    train_data = pd.read_csv('DGL/ml-100k/ua.base', sep='\t', header=None,
                              names=['user_id', 'item_id', 'rating', 'timestamp'])
-    test_data = pd.read_csv('./ml-100k/ua.test', sep='\t', header=None,
+    test_data = pd.read_csv('DGL/ml-100k/ua.test', sep='\t', header=None,
                              names=['user_id', 'item_id', 'rating', 'timestamp'])
-    user_data = pd.read_csv('./ml-100k/u.user', sep='|', header=None, encoding='latin1')
-    item_data = pd.read_csv('./ml-100k/u.item', sep='|', header=None, encoding='latin1')
+    user_data = pd.read_csv('DGL/ml-100k/u.user', sep='|', header=None, encoding='latin1')
+    item_data = pd.read_csv('DGL/ml-100k/u.item', sep='|', header=None, encoding='latin1')
 
     # 测试集和训练集的用户项目不同，根据训练集对测试集进行精简
     test_data = test_data[test_data['user_id'].isin(train_data['user_id']) &
@@ -46,4 +46,34 @@ def get_fshl():
     item_data = pd.DataFrame(list(result_course))
 
     return train_data,user_data,item_data
+
+def get_bigraph():
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+
+    sql_user = DataBaseQuery["dgl_user_info"]
+
+    sql_course = DataBaseQuery["feature_classify"]
+
+    sql_classify = DataBaseQuery["classify_info"]
+
+    result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                   sql=sql_course)
+    result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                 sql=sql_user)
+    result_classify = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                     sql=sql_classify)
+    # 数据加载
+    train_data = pd.read_csv('../file_saved/toGcn.csv', header=None,
+                             names=['user_id', 'item_id', 'rating'])
+    print(train_data)
+    train_data.columns = ['user_id', 'item_id', 'rating']
+    user_data = pd.DataFrame(list(result_user))
+    item_data = pd.DataFrame(list(result_course))
+    classify_data = pd.DataFrame(list(result_classify))
+
+
+    return train_data, user_data, item_data, classify_data
+
 
