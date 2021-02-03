@@ -49,29 +49,29 @@ def getEnumValue(enum_type):
 
 
 # -----------------   数据库配置  ---------------------
-# DataBaseInfo = {
-#     "address": "39.100.100.198",
-#     "username": "root",
-#     "passwd": "ASElab905",
-#     "basename": "learningrecommend"
-# }
-
 DataBaseInfo = {
-    "address": "101.133.194.114",
-    "username": "train_rs",
-    "passwd": "Trs123!@#",
-    "basename": "train_recommended_sys"
+    "address": "39.100.100.198",
+    "username": "root",
+    "passwd": "ASElab905",
+    "basename": "learningrecommend"
 }
+
+# DataBaseInfo = {
+#     "address": "101.133.194.114",
+#     "username": "train_rs",
+#     "passwd": "Trs123!@#",
+#     "basename": "train_recommended_sys"
+# }
 
 DataBaseQuery = {
     "course_dr": "select * from course_dr5000",
-    "course_info": "select id, name from course5000",
+    "course_info": "select id, name, classify_id from course5000",
     "user_id": "select id from account5000",
     "user_course": "select account_id, course_id, click_times, score from account_course5000",
     "user_course_changed": "select account_id, course_id, click_times, score from account_course5000",
     "interface_video": "select id, name, image, description from course5000",
     "interface_image": "select id, name, image, description from course5000",
-    "classify_info": "select id, course_name, classify_name from course_classify5000",
+    "classify_info": "select id, course_name, classify_name, classify_id from course_classify5000",
     "online_course_dr_changed": "select * from course_dr5000_changed",
     "online_select_differ": "select classify_id from course_classify5000 where id = '{0}'",
     "online_select_dislike": "select classify_id from course_classify where id = '{0}'",

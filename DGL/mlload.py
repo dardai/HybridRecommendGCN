@@ -65,13 +65,13 @@ def get_bigraph():
     result_classify = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                      sql=sql_classify)
     # 数据加载
-    train_data = pd.read_csv('../file_saved/toGcn.csv', header=None,
+    train_data = pd.read_csv('file_saved/toGcn.csv', header=None,
                              names=['user_id', 'item_id', 'rating'])
-    print(train_data)
     train_data.columns = ['user_id', 'item_id', 'rating']
     user_data = pd.DataFrame(list(result_user))
     item_data = pd.DataFrame(list(result_course))
     classify_data = pd.DataFrame(list(result_classify))
+    classify_data.columns = ['id', 'course_name', 'classify_name', 'classify_id']
 
 
     return train_data, user_data, item_data, classify_data

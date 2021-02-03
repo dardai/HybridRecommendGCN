@@ -14,10 +14,12 @@ from globalConst import DataBaseQuery, DataBaseOperateType, SetType
 from utils.databaseIo import DatabaseIo
 from utils.extends import formatDataByType
 import random
-
+pd.set_option('display.max_columns', None)
+#显示所有行
+pd.set_option('display.max_rows', None)
 #False就用movielens，True就用复深蓝数据
-FSLflag = False
-def loadData(FSLflag = False):
+FSLflag = True
+def loadData():
     if FSLflag == False:
         all_data = pd.read_csv('../DGL/ml-100k/u.data', sep='\t', header=None,
                                names=['user_id', 'item_id', 'rating', 'timestamp'])
@@ -54,29 +56,25 @@ def loadData(FSLflag = False):
         result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                      sql=sql_user)
         drList = formatDataByType(SetType.SetType_List, result_dr)
-        all_data = drList
-        user_data = formatDataByType(SetType.SetType_Set, result_user)
-        item_data = formatDataByType(SetType.SetType_List, result_course)
-        classify_data = formatDataByType(SetType.SetType_List, result_classify)
+        all_data = pd.DataFrame(list(drList))
+        all_data.columns = ['user_id', 'item_id', 'rating']
+        user_data = pd.DataFrame(list(result_user))
+        item_data = pd.DataFrame(list(result_course))
+
+
+        classify_data = pd.DataFrame(list(result_classify))
+        classify_data.columns = ['id', 'course_name', 'classify_name', 'classify_id']
 
         return all_data,user_data,item_data,classify_data
 
 def MLP(all_data, u_data, i_data,epoch,batch_size):
-    # all_data, user_data, item_data, u_data, i_data = loadData()
-    # df_items = item_data[['item_id', 'title']]
-    # print('Movies:')
-    # print(df_items.head())
 
-    # print('Ratings')
     df_ratings = all_data
-    # print(df_ratings.head())
     df_ratings = df_ratings[['user_id', 'item_id', 'rating']]
 
     num_users = len(df_ratings.user_id.unique())
     num_items = len(df_ratings.item_id.unique())
     print('There are {} unique users and {} unique movies in this data set'.format(num_users, num_items))
-
-    # print(df_ratings.head())
 
     num_users = len(df_ratings.user_id.unique())
     num_items = len(df_ratings.item_id.unique())
@@ -131,31 +129,38 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
     model = Model([user, item], out)
     model.compile(loss="mean_squared_error", optimizer="adam")
     # model.summary()
-
+    train = train.astype('float64')
     model.fit([train.user_id.values, train.item_id.values], train.rating.values, epochs=epoch, batch_size=batch_size, verbose=2)
 
-    # pred = model.predict([test.user_id.values, test.item_id.values])
     u_pre = u_data[0].values.tolist()
     i_pre = i_data[0].values.tolist()
     ilen = len(i_pre)
     ulen = len(u_pre)
     u_pre = u_pre * ilen
     i_pre = i_pre * ulen
-    pre = pd.DataFrame({'user_id': u_pre, 'item_id': i_pre})
-    pred = model.predict([pre.user_id.values, pre.item_id.values])
 
+    pre = pd.DataFrame({'user_id': u_pre, 'item_id': i_pre})
+    if FSLflag:
+        pre['user_id'] = pre['user_id'].map(users)
+        pre['item_id'] = pre['item_id'].map(movies)
+        pre = pre.dropna(subset=['user_id','item_id'])
+
+    pred = model.predict([pre.user_id.values, pre.item_id.values])
     pre['rating'] = pred
     result = pre.groupby('user_id').apply(lambda x: x.sort_values(by="rating", ascending=False)).reset_index(drop=True)
 
-    print(result)
     result.to_csv('../file_saved/MLPresult.csv',index=None)
+    if FSLflag:
+        return  result,users,movies
     return result
 
-def makeClassifyDict(item_data,FSLflag):
+def makeClassifyDict(item_data,FSLflag,dict):
     print("make classify dict")
     # 示例{“课程id”：[类别1、类别2、类别3]}
     classifydict = {}
     item = item_data
+    if FSLflag:
+        item[0] = item[0].map(dict)
     item = item.values.tolist()
     for row in item:
         if row[0] not in classifydict.keys():
@@ -165,12 +170,12 @@ def makeClassifyDict(item_data,FSLflag):
                     if row[i] == 1:
                         classifydict[row[0]].append(i)
             else:
-                classifydict[row[0]].append(row[1])
+                classifydict[row[0]].append(row[2])
         else:
             continue
     return classifydict
 
-def recommend(item_data,topK,FSLflag,classify_num=0):
+def recommend(item_data,topK,FSLflag,dict = None,classify_num=0):
     result = pd.read_csv('../file_saved/MLPresult.csv')
     result_topK = result.groupby(['user_id']).head(topK).reset_index(drop=True)
 
@@ -184,24 +189,30 @@ def recommend(item_data,topK,FSLflag,classify_num=0):
     # 计算物品类别覆盖率
     # 记录推荐类别的字典
     classify_num_dict = {}
-    classify = makeClassifyDict(item_data,FSLflag)
-    item_id = result_topK['item_id'].value_counts().values.tolist()
-    for row in item_id:
-        print("row",row)
-        print("cr",classify[row])
-        for c in classify[row]:
-            print("c:",c)
-            if isinstance(c, int):
-                if c not in classify_num_dict.keys():
-                    classify_num_dict[c] = 1
-                else:
-                    continue
-            else:
-                for i in c:
-                    if i not in classify_num_dict.keys():
-                        classify_num_dict[i] = 1
+    classify = makeClassifyDict(item_data,FSLflag,dict)
+    if FSLflag:
+        item_id = result_topK['item_id'].values.tolist()
+        classify_id = []
+        for i in item_id:
+            classify_id.append(classify[i][0])
+    else:
+        item_id = result_topK['item_id'].value_counts().values.tolist()
+    if FSLflag == False:
+        for row in item_id:
+            for c in classify[row]:
+                if isinstance(c, int):
+                    if c not in classify_num_dict.keys():
+                        classify_num_dict[c] = 1
                     else:
                         continue
+                else:
+                    for i in c:
+                        if i not in classify_num_dict.keys():
+                            classify_num_dict[i] = 1
+                        else:
+                            continue
+    else:
+        classify_num_dict = set(classify_id)
     if FSLflag == False:
         classify_cov = (len(classify_num_dict) * 1.0) / 19.0
     else:
@@ -219,9 +230,13 @@ else:
     classify_id = classify_data['classify_id'].values.tolist()
     classify_num = len(set(classify_id))
 
-MLP(all_data, user_data, item_data,epoch=1,batch_size=32)
+if FSLflag:
+    result, userdict, itemdict = MLP(all_data, user_data, item_data,epoch=1,batch_size=32)
+else:
+    MLP(all_data, user_data, item_data, epoch=1, batch_size=32)
 
 if FSLflag == False:
+
     recommend(item_data, topK=10, FSLflag=FSLflag)
 else:
-    recommend(item_data,topK=10, FSLflag = FSLflag,classify_num = classify_num)
+    recommend(item_data,topK=10, FSLflag = FSLflag, dict = itemdict,classify_num = classify_num)

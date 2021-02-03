@@ -7,8 +7,11 @@ from DGL.gcmc import rmse, GCMCRating1, GCMCRating2
 import tqdm
 import pandas as pd
 
+# pd.set_option('display.max_columns', None)
+# #显示所有行
+# pd.set_option('display.max_rows', None)
 
-FSLflag = False
+FSLflag = True
 
 def makeClassifyDict(item_data,FSLflag):
     print("make classify dict")
@@ -35,32 +38,39 @@ def recommend(item_data,topK,FSLflag,classify_num=0):
     else:
         result = pd.read_csv('file_saved/fsl-DGLresult.csv')
     result_topK = result.groupby(['user_id']).head(topK).reset_index(drop=True)
-
     # 计算列表覆盖率
     recommend_length = len(result_topK['item_id'].value_counts())
     item_length = len(item_data)
     cov = recommend_length/item_length
     print("the rate of coverage: ")
     print(cov)
-
     # 计算物品类别覆盖率
     # 记录推荐类别的字典
     classify_num_dict = {}
     classify = makeClassifyDict(item_data,FSLflag)
-    item_id = result_topK['item_id'].value_counts().values.tolist()
-    for row in item_id:
-        for c in classify[row]:
-            if isinstance(c, int):
-                if c not in classify_num_dict.keys():
-                    classify_num_dict[c] = 1
-                else:
-                    continue
-            else:
-                for i in c:
-                    if i not in classify_num_dict.keys():
-                        classify_num_dict[i] = 1
+    if FSLflag:
+        item_id = result_topK['item_id'].astype('str').values.tolist()
+        classify_id = []
+        for i in item_id:
+            classify_id.append(classify[i][0])
+    else:
+        item_id = result_topK['item_id'].value_counts().values.tolist()
+    if FSLflag == False:
+        for row in item_id:
+            for c in classify[row]:
+                if isinstance(c, int):
+                    if c not in classify_num_dict.keys():
+                        classify_num_dict[c] = 1
                     else:
                         continue
+                else:
+                    for i in c:
+                        if i not in classify_num_dict.keys():
+                            classify_num_dict[i] = 1
+                        else:
+                            continue
+    else:
+        classify_num_dict = set(classify_id)
     if FSLflag == False:
         classify_cov = (len(classify_num_dict) * 1.0) / 19.0
     else:
@@ -72,7 +82,11 @@ def recommend(item_data,topK,FSLflag,classify_num=0):
 def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
     # 从初始输入里拿到数据
     train_data, user_data, item_data,classify_data = get_bigraph()
-    item_data_for_recommend = item_data
+    train_data = train_data.astype({'user_id': 'str', 'item_id': 'str'})
+    item_data_for_recommend = item_data.copy()
+    rating_count = train_data['rating'].value_counts().values.tolist()
+    NUM_RATINGS = len(rating_count)
+
     classify_id = classify_data['classify_id'].values.tolist()
     classify_num = len(set(classify_id))
     # 把用户id和项目id的类型换成枚举类
@@ -97,15 +111,9 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
         ('user', 'watched', 'item'): (train_user_ids, train_item_ids),
         ('item', 'watchedby', 'user'): (train_item_ids, train_user_ids)
     })
-
-    print(graph)
-    print(graph.etypes)
-
     # 令训练数据和用户、项目数据一致
-    print("处理前：\n")
-    print("item_data: \n", item_data)
     user_data[0] = user_data[0].astype('category')
-    user_data[0] = user_data[0].cat.set_categories(train_data['user_id'].cat.categories)
+    user_data[0] = user_data[0].cat.set_categories(train_data['user_id'].astype('category').cat.categories)
     # 更新了类别后，训练数据集的类别可能比整体用户数的类别少，导致产生空值
     # 为此需要进行空值去除，具体就是把第0列的空值去掉
     user_data = user_data.dropna(subset=[0])
@@ -124,6 +132,7 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
     # 处理用户以及项目的特征one-hot向量
     user_data[1] = user_data[1].astype('category')
 
+
     user_gender = user_data[1].cat.codes.values
     num_user_genders = len(user_data[1].cat.categories)
 
@@ -132,7 +141,6 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
 
     item_genres = item_data[1].cat.codes.values
     num_item_genres = len(item_data[1].cat.categories)
-
 
     # 将上述特征赋予图中的结点
     graph.nodes['user'].data['gender'] = torch.LongTensor(user_gender)
@@ -158,12 +166,12 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, collate_fn=sampler.sample, shuffle=True)
 
     # 创建模型
-    model = GCMCRating1(graph.number_of_nodes('user'), graph.number_of_nodes('item'), HIDDEN_DIMS, 5, NUM_LAYERS,
+    model = GCMCRating1(graph.number_of_nodes('user'), graph.number_of_nodes('item'), HIDDEN_DIMS, NUM_RATINGS, NUM_LAYERS,
                         num_user_genders, num_item_genres)
-    print('node',graph.number_of_nodes('user'),graph.number_of_nodes('item'))
     # 使用Adam优化器
     opt = torch.optim.Adam(model.parameters())
 
+    epoch = 0
     # 开始训练
     for _ in range(NUM_EPOCHS):
         model.train()
@@ -189,6 +197,7 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
             real_data = torch.cat(real_data, 0)
         model.eval()
 
+
         #取出真实id，并用字典映射回去，生成推荐列表
         real_data = pd.DataFrame(real_data.tolist())
         real_data.columns = ['user_id', 'item_id']
@@ -209,13 +218,26 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
         result.to_csv('file_saved/fsl-DGLresult.csv', index=None)
         print(result)
 
+        epoch += 1
+        if epoch % 1 == 0:
+            result.to_csv('new_saved/fsl-DGLresult-epoch{}0.csv'.format(epoch), index=None)
+            m1 = pd.DataFrame(model.W.weight.tolist())
+            m2 = pd.DataFrame(model.V.weight.tolist())
+            m1.to_csv('new_saved/fsl-GCMC-W-epoch{}0.csv'.format(epoch), index=None)
+            m2.to_csv('new_saved/fsl-GCMC-V-epoch{}0.csv'.format(epoch), index=None)
+
+            for i in range(layers):
+                l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
+                l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
+                l1.to_csv('new_saved/fsl-GCMCConv-W_r-epoch{}0-layer{}.csv'.format(epoch,i), index=None)
+                l2.to_csv('new_saved/fsl-GCMCConv-W-epoch{}0-layer{}.csv'.format(epoch, i), index=None)
         recommend(item_data_for_recommend, topK , FSLflag , classify_num=classify_num)
 
 
 def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
     # 拿到数据
     train_data, test_data, user_data, item_data = get_ml_100k()
-    item_data_for_recommend = item_data
+    item_data_for_recommend = item_data.copy()
     # 把用户id和项目id的类别换成枚举类
     train_data = train_data.astype({'user_id': 'category', 'item_id': 'category'})
     test_data = test_data.astype({'user_id': 'category', 'item_id': 'category'})
@@ -310,6 +332,7 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
     opt = torch.optim.Adam(model.parameters())
 
     # 开始训练
+    epoch  = 0
     for _ in range(NUM_EPOCHS):
         model.train()
         # 加个进度条，直观
@@ -350,12 +373,29 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
         result = result.groupby('user_id').apply(lambda x: x.sort_values(by="rating", ascending=False)).reset_index(
             drop=True)
         result.to_csv('file_saved/ml-DGLresult.csv', index=None)
+
+        epoch += 1
+        if epoch % 1 == 0:
+            result.to_csv('new_saved/ml-DGLresult-epoch{}0.csv'.format(epoch), index=None)
+            m1 = pd.DataFrame(model.W.weight.tolist())
+            m2 = pd.DataFrame(model.V.weight.tolist())
+            m1.to_csv('new_saved/ml-GCMC-W-epoch{}0.csv'.format(epoch), index=None,header=None)
+            m2.to_csv('new_saved/ml-GCMC-V-epoch{}0.csv'.format(epoch), index=None,header=None)
+
+            for i in range(layers):
+                l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
+                l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
+                l1.to_csv('new_saved/ml-GCMCConv-W_r-epoch{}0-layer{}.csv'.format(epoch,i), index=None,header=None)
+                l2.to_csv('new_saved/ml-GCMCConv-W-epoch{}0-layer{}.csv'.format(epoch, i), index=None,header=None)
+
         print(result)
         recommend(item_data_for_recommend, topK , FSLflag)
 
 def run():
     if FSLflag == False:
-        dglMainMovielens(layers=1,batch_size=500,epochs=1,hiddeen_dims=8,topK=10)
+        dglMainMovielens(layers=2,batch_size=500,epochs=50,hiddeen_dims=8,topK=10)
     else:
-        dglMainFSL(layers=1,batch_size=500,epochs=1,hiddeen_dims=8,topK=10)
+        # dglMainFSL(layers=1, batch_size=500, epochs=1, hiddeen_dims=8, topK=10)
+        # 前5000的数据量太小，需要降低采样数量，batch_size就先设为5，数据多了再改
+        dglMainFSL(layers=1,batch_size=5,epochs=1,hiddeen_dims=8,topK=10)
 

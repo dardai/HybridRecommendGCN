@@ -9,7 +9,6 @@ import torch
 class GCMCConv(nn.Module):
     def __init__(self, hidden_dims, num_ratings):
         super().__init__()
-
         self.W_r = nn.Parameter(torch.randn(num_ratings + 1, hidden_dims, hidden_dims))
         self.W = nn.Linear(hidden_dims * 2, hidden_dims)
 
