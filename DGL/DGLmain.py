@@ -215,17 +215,17 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
 
         epoch += 1
         if epoch % 10 == 0:
-            result.to_csv('new_saved/fsl-DGLresult-epoch{}.csv'.format(epoch), index=None)
+            result.to_csv('new_saved/dgl/fsl-DGLresult-epoch{}.csv'.format(epoch), index=None)
             m1 = pd.DataFrame(model.W.weight.tolist())
             m2 = pd.DataFrame(model.V.weight.tolist())
-            m1.to_csv('new_saved/fsl-GCMC-W-epoch{}.csv'.format(epoch), index=None)
-            m2.to_csv('new_saved/fsl-GCMC-V-epoch{}.csv'.format(epoch), index=None)
+            m1.to_csv('new_saved/dgl/fsl-GCMC-W-epoch{}.csv'.format(epoch), index=None)
+            m2.to_csv('new_saved/dgl/fsl-GCMC-V-epoch{}.csv'.format(epoch), index=None)
 
             for i in range(layers):
                 l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
                 l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
-                l1.to_csv('new_saved/fsl-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None)
-                l2.to_csv('new_saved/fsl-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None)
+                l1.to_csv('new_saved/dgl/fsl-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None)
+                l2.to_csv('new_saved/dgl/fsl-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None)
         recommend(item_data_for_recommend, topK , FSLflag , classify_num=classify_num)
 
 
@@ -371,17 +371,17 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
 
         epoch += 1
         if epoch % 10 == 0:
-            result.to_csv('new_saved/ml-DGLresult-epoch{}.csv'.format(epoch), index=None)
+            result.to_csv('new_saved/dgl/ml-DGLresult-epoch{}.csv'.format(epoch), index=None)
             m1 = pd.DataFrame(model.W.weight.tolist())
             m2 = pd.DataFrame(model.V.weight.tolist())
-            m1.to_csv('new_saved/ml-GCMC-W-epoch{}.csv'.format(epoch), index=None,header=None)
-            m2.to_csv('new_saved/ml-GCMC-V-epoch{}.csv'.format(epoch), index=None,header=None)
+            m1.to_csv('new_saved/dgl/ml-GCMC-W-epoch{}.csv'.format(epoch), index=None,header=None)
+            m2.to_csv('new_saved/dgl/ml-GCMC-V-epoch{}.csv'.format(epoch), index=None,header=None)
 
             for i in range(layers):
                 l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
                 l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
-                l1.to_csv('new_saved/ml-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None,header=None)
-                l2.to_csv('new_saved/ml-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None,header=None)
+                l1.to_csv('new_saved/dgl/ml-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None,header=None)
+                l2.to_csv('new_saved/dgl/ml-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None,header=None)
 
         print(result)
         recommend(item_data_for_recommend, topK , FSLflag)
