@@ -49,7 +49,7 @@ def recommend(item_data,topK,FSLflag,classify_num=0):
         for i in item_id:
             classify_id.append(classify[i][0])
     else:
-        item_id = result_topK['item_id'].value_counts().values.tolist()
+        item_id = result_topK['item_id'].value_counts().keys().values.tolist()
     if FSLflag == False:
         for row in item_id:
             for c in classify[row]:
