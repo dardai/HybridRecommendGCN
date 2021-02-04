@@ -7,11 +7,11 @@ import pandas as pd
 from globalConst import DataBaseQuery, DataBaseOperateType, SetType
 from utils.databaseIo import DatabaseIo
 from utils.extends import formatDataByType
+from decimal import Decimal
 
-
-def getdata(flag = True):
+def getdata(FSLflag):
     print("get data")
-    if flag == True:
+    if FSLflag == False:
         train_data = pd.read_csv('../DGL/ml-100k/ua.base', sep='\t', header=None,
                                  names=['user_id', 'item_id', 'rating', 'timestamp'])
         test_data = pd.read_csv('../DGL/ml-100k/ua.test', sep='\t', header=None,
@@ -27,6 +27,7 @@ def getdata(flag = True):
         item_data = item_data.values.tolist()
         # print item_data
         # print item_data
+        return train_data, test_data, user_data, item_data
     else:
         dbHandle = DatabaseIo()
         if not dbHandle:
@@ -34,16 +35,20 @@ def getdata(flag = True):
         sql_dr = DataBaseQuery["course_dr"]
         sql_course = DataBaseQuery["course_info"]
         sql_user = DataBaseQuery["user_id"]
+        sql_classify = DataBaseQuery["classify_info"]
         result_dr = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                    sql=sql_dr)
         result_course = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                        sql=sql_course)
+        result_classify = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                                       sql=sql_classify)
         dbHandle.changeCloseFlag()
         result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                      sql=sql_user)
         drList = formatDataByType(SetType.SetType_List, result_dr)
         user_data = formatDataByType(SetType.SetType_Set, result_user)
         item_data = formatDataByType(SetType.SetType_List, result_course)
+        classify_data = formatDataByType(SetType.SetType_List, result_classify)
         dr_length = len(drList)
         testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
         data = pd.DataFrame(drList)
@@ -54,8 +59,7 @@ def getdata(flag = True):
                 test_data.append(row)
             else:
                 train_data.append(row)
-
-    return train_data, test_data, user_data, item_data
+        return train_data, test_data, user_data, item_data, classify_data
 
 def createDict(data):
     print("make user_dict and item_dict")
@@ -70,6 +74,8 @@ def createDict(data):
             item_dict[recode[1]].append(recode[0])
         else:
             item_dict[recode[1]] = [recode[0]]
+    # print(user_dict)
+    # print(item_dict)
     return user_dict, item_dict
 
 def ItemSimilarity(user_dict):
@@ -89,8 +95,8 @@ def ItemSimilarity(user_dict):
             if i[0] not in N.keys():
                 N[i[0]] = 0
             N[i[0]] = N[i[0]] + 1
-            C[i[0]] = {}
 
+            C[i[0]] = {}
             for j in user_dict[key]:
                 if i == j:
                     continue
@@ -116,19 +122,36 @@ def ItemSimilarity(user_dict):
 
     return W
 
+# 物品-物品相似度矩阵存储
+def save_W(W):
+    W_list = []
+    for key1, sub_dict in W.items():
+        for key2, value in sub_dict.items():
+            temp = []
+            temp.append(key1)
+            temp.append(key2)
+            temp.append(value)
+            W_list.append(temp)
+    W_df = pd.DataFrame(W_list)
+    W_df.to_csv("../file_saved/item_similarity.csv", header = False, index = False)
+
 def makeRecommend(train_user_dict, test_user_dict, K):
     print("make recommend")
     rank = {}
     result = []
     W = ItemSimilarity(train_user_dict)
+    save_W(W)
     for user_id in test_user_dict.keys():
         for i, score in test_user_dict[user_id]:
-            for j, wj in sorted(W[i].items(), key = lambda x:x[1], reverse = True)[0 : K]:
-                if j in test_user_dict[user_id]:
-                    continue
-                if j not in rank.keys():
-                    rank[j] = 0
-                rank[j] = rank[j] + score * wj
+            if i in W.keys():
+                for j, wj in sorted(W[i].items(), key = lambda x:x[1], reverse = True)[0 : K]:
+                    if j in test_user_dict[user_id]:
+                        continue
+                    if j not in rank.keys():
+                        rank[j] = 0
+                    rank[j] = rank[j] + score * Decimal(wj)
+            else:
+                continue
         temp_dict = dict(sorted(rank.items(), key = lambda x:x[1], reverse = True)[0 : K])
 
         for key , value in temp_dict.items():
@@ -155,6 +178,27 @@ def makeClassifyDict(item_data):
             continue
     return classifydict
 
+def getFSLCoverage(result, item_data, classify_data):
+    recommend_result = pd.DataFrame(result)
+    recommend_length = len(recommend_result[1].value_counts())
+    item_length = len(item_data)
+    cov = (recommend_length * 1.0) / (item_length * 1.0)
+    # 计算列表覆盖率
+    print("the rate of coverage: ")
+    print(cov)
+    df_classify = pd.DataFrame(classify_data)
+    classify = {}
+    for row in result:
+        for classify_row in item_data:
+            if row[1] == classify_row[0]:
+                if classify_row[2] not in classify.keys():
+                    classify[classify_row[2]] = 1
+    total_classify_num = len(df_classify[3].value_counts().keys())
+    classify_cov = (len(classify) * 1.0) / (total_classify_num * 1.0)
+    print("the rate of classify coverage: ")
+    print(classify_cov)
+
+
 def getCoverage(result, item_data):
     print("get coverage rate")
     # 记录推荐类别的字典
@@ -164,7 +208,8 @@ def getCoverage(result, item_data):
     recommend_result = pd.DataFrame(result)
     # 获取推荐列表中不同物品的个数
     recommend_length = len(recommend_result[1].value_counts())
-    item_id = pd.DataFrame(recommend_result[1].value_counts()).values.tolist()
+    item_id = pd.DataFrame(recommend_result[1].value_counts().keys()).values.tolist()
+    # item_id = recommend_result[1].value_counts()
     for row in item_id:
         for c in classify[row[0]]:
             if  isinstance(c, int):
@@ -182,26 +227,33 @@ def getCoverage(result, item_data):
     item_length = len(item_data)
     # print recommend_length
     # print item_length
-    cov = (recommend_length * 1.0) / (item_length * 1.0)
-    classify_cov = (len(classify_num_dict) * 1.0) / 19.0
     # 计算列表覆盖率
+    cov = (recommend_length * 1.0) / (item_length * 1.0)
     print("the rate of coverage: ")
     print(cov)
     # 计算物品类别覆盖率
+    classify_cov = (len(classify_num_dict) * 1.0) / 19.0
     print("the rate of classify coverage: ")
     print(classify_cov)
 
 
+def itemCF_main():
+    FSLflag = False
+    if FSLflag:
+        train_data, test_data, user_data, item_data, classify_data = getdata(FSLflag)
+    else:
+        train_data, test_data, user_data, item_data = getdata(FSLflag)
+    train_user_dict, train_item_dict = createDict(train_data)
+    test_user_dict, test_item_dict = createDict(test_data)
+    result = makeRecommend(train_user_dict, test_user_dict, 20)
+    # print result
+    if FSLflag:
+        getFSLCoverage(result, item_data, classify_data)
+    else:
+        getCoverage(result, item_data)
+    recommend_result = pd.DataFrame(result)
+    recommend_result.to_csv("../file_saved/itemCF.csv", header = False, index = False)
 
-train_data, test_data, user_data, item_data = getdata(True)
-train_user_dict, train_item_dict = createDict(train_data)
-test_user_dict, test_item_dict = createDict(test_data)
-result = makeRecommend(train_user_dict, test_user_dict, 20)
-# print result
-getCoverage(result, item_data)
-recommend_result = pd.DataFrame(result)
-recommend_result.to_csv("../file_saved/itemCF.csv", header = False, index = False)
 
 
-
-# getdata()
+itemCF_main()

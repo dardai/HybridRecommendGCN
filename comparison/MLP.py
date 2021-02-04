@@ -14,9 +14,11 @@ from globalConst import DataBaseQuery, DataBaseOperateType, SetType
 from utils.databaseIo import DatabaseIo
 from utils.extends import formatDataByType
 import random
+from tensorflow.keras.callbacks import Callback
 pd.set_option('display.max_columns', None)
 #显示所有行
 pd.set_option('display.max_rows', None)
+
 #False就用movielens，True就用复深蓝数据
 FSLflag = True
 def loadData():
@@ -115,9 +117,11 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
     embed_item = Embedding(input_dim=num_items + 1, output_dim=32, embeddings_initializer='uniform',
                            name='item_embedding', input_length=1)(item)
 
+    # 将嵌入层进行扁平化，如将（4，4）矩阵转成（，16），即将二维数据转成一维数据
     user2 = Flatten()(embed_user)
     item2 = Flatten()(embed_item)
 
+    # axis = -1 表示从倒数第1个维度进行拼接
     combine = Concatenate(axis=-1)([user2, item2])
 
     layer1 = Dense(32, activation='relu', kernel_initializer='glorot_uniform')(combine)
@@ -130,10 +134,24 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
     model.compile(loss="mean_squared_error", optimizer="adam")
     # model.summary()
     train = train.astype('float64')
-    model.fit([train.user_id.values, train.item_id.values], train.rating.values, epochs=epoch, batch_size=batch_size, verbose=2)
-
+    for e in range(1, epoch + 1):
+        model.train_on_batch([train.user_id.values, train.item_id.values], train.rating.values)
+        if e % 10 == 0:
+            file_name = ["MLP_embed_user_W%d.csv", "MLP_embed_item_W%d.csv", "MLP_layer1_W%d.csv", "MLP_layer1_b%d.csv",
+                         "MLP_layer2_W%d.csv", "MLP_layer2_b%d.csv", "MLP_layer3_W%d.csv", "MLP_layer3_b%d.csv",
+                         "MLP_out_W%d.csv", "MLP_out_b%d.csv"]
+            count = 0
+            path_name = "../file_saved/"
+            for p in model.get_weights():
+                file = path_name + file_name[count] % e
+                temp = pd.DataFrame(p)
+                temp.to_csv(file, header=False, index=False)
+                count = count + 1
+        # model.fit()
+    # model.fit([train.user_id.values, train.item_id.values], train.rating.values, epochs=epoch, batch_size=batch_size, verbose=2, callbacks = [WeightsSaver(10)])
     u_pre = u_data[0].values.tolist()
     i_pre = i_data[0].values.tolist()
+    # 列表乘以一个数字x将得到一个新的列表，新列表是原来列表重复x次，如[0]*5 = [0,0,0,0,0]
     ilen = len(i_pre)
     ulen = len(u_pre)
     u_pre = u_pre * ilen
@@ -146,10 +164,31 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
         pre = pre.dropna(subset=['user_id','item_id'])
 
     pred = model.predict([pre.user_id.values, pre.item_id.values])
+
+    # # 保存各层权重和偏差
+    # file_name = ["MLP_embed_user_W.csv", "MLP_embed_item_W.csv", "MLP_layer1_W.csv", "MLP_layer1_b.csv",
+    #              "MLP_layer2_W.csv", "MLP_layer2_b.csv", "MLP_layer3_W.csv", "MLP_layer3_b.csv", "MLP_out_W.csv",
+    #              "MLP_out_b.csv"]
+    # count = 0
+    # path_name = "../file_saved/"
+    # for p in model.get_weights():
+    #     file = path_name + file_name[count]
+    #     temp = pd.DataFrame(p)
+    #     temp.to_csv(file, header=False, index=False)
+    #     count = count + 1
+
     pre['rating'] = pred
     result = pre.groupby('user_id').apply(lambda x: x.sort_values(by="rating", ascending=False)).reset_index(drop=True)
-
-    result.to_csv('../file_saved/MLPresult.csv',index=None)
+    if FSLflag:
+        # 反向字典，以输出原id
+        users_r = {v: k for k, v in users.items()}
+        items_r = {v: k for k, v in movies.items()}
+        result_fsl = result.copy()
+        result_fsl['user_id'] = result_fsl['user_id'].map(users_r)
+        result_fsl['item_id'] = result_fsl['item_id'].map(items_r)
+        result_fsl.to_csv('../file_saved/MLPresult-fsl.csv', index=None)
+    else:
+        result.to_csv('../file_saved/MLPresult.csv',index=None)
     if FSLflag:
         return  result,users,movies
     return result
@@ -196,7 +235,9 @@ def recommend(item_data,topK,FSLflag,dict = None,classify_num=0):
         for i in item_id:
             classify_id.append(classify[i][0])
     else:
-        item_id = result_topK['item_id'].value_counts().values.tolist()
+        # print(result_topK['item_id'].value_counts())
+        item_id = result_topK['item_id'].value_counts().keys().values.tolist()
+        # print(item_id)
     if FSLflag == False:
         for row in item_id:
             for c in classify[row]:
@@ -231,7 +272,7 @@ else:
     classify_num = len(set(classify_id))
 
 if FSLflag:
-    result, userdict, itemdict = MLP(all_data, user_data, item_data,epoch=1,batch_size=32)
+    result, userdict, itemdict = MLP(all_data, user_data, item_data,epoch=50,batch_size=32)
 else:
     MLP(all_data, user_data, item_data, epoch=1, batch_size=32)
 
