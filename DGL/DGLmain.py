@@ -7,15 +7,10 @@ from DGL.gcmc import rmse, GCMCRating1, GCMCRating2
 import tqdm
 import pandas as pd
 
-# pd.set_option('display.max_columns', None)
-# #显示所有行
-# pd.set_option('display.max_rows', None)
-
-FSLflag = True
+FSLflag = False
 
 def makeClassifyDict(item_data,FSLflag):
     print("make classify dict")
-    # 示例{“课程id”：[类别1、类别2、类别3]}
     classifydict = {}
     item = item_data
     item = item.values.tolist()
@@ -219,18 +214,18 @@ def dglMainFSL(layers,batch_size,epochs,hiddeen_dims,topK):
         print(result)
 
         epoch += 1
-        if epoch % 1 == 0:
-            result.to_csv('new_saved/fsl-DGLresult-epoch{}0.csv'.format(epoch), index=None)
+        if epoch % 10 == 0:
+            result.to_csv('new_saved/dgl/fsl-DGLresult-epoch{}.csv'.format(epoch), index=None)
             m1 = pd.DataFrame(model.W.weight.tolist())
             m2 = pd.DataFrame(model.V.weight.tolist())
-            m1.to_csv('new_saved/fsl-GCMC-W-epoch{}0.csv'.format(epoch), index=None)
-            m2.to_csv('new_saved/fsl-GCMC-V-epoch{}0.csv'.format(epoch), index=None)
+            m1.to_csv('new_saved/dgl/fsl-GCMC-W-epoch{}.csv'.format(epoch), index=None)
+            m2.to_csv('new_saved/dgl/fsl-GCMC-V-epoch{}.csv'.format(epoch), index=None)
 
             for i in range(layers):
                 l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
                 l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
-                l1.to_csv('new_saved/fsl-GCMCConv-W_r-epoch{}0-layer{}.csv'.format(epoch,i), index=None)
-                l2.to_csv('new_saved/fsl-GCMCConv-W-epoch{}0-layer{}.csv'.format(epoch, i), index=None)
+                l1.to_csv('new_saved/dgl/fsl-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None)
+                l2.to_csv('new_saved/dgl/fsl-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None)
         recommend(item_data_for_recommend, topK , FSLflag , classify_num=classify_num)
 
 
@@ -375,27 +370,27 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
         result.to_csv('file_saved/ml-DGLresult.csv', index=None)
 
         epoch += 1
-        if epoch % 1 == 0:
-            result.to_csv('new_saved/ml-DGLresult-epoch{}0.csv'.format(epoch), index=None)
+        if epoch % 10 == 0:
+            result.to_csv('new_saved/dgl/ml-DGLresult-epoch{}.csv'.format(epoch), index=None)
             m1 = pd.DataFrame(model.W.weight.tolist())
             m2 = pd.DataFrame(model.V.weight.tolist())
-            m1.to_csv('new_saved/ml-GCMC-W-epoch{}0.csv'.format(epoch), index=None,header=None)
-            m2.to_csv('new_saved/ml-GCMC-V-epoch{}0.csv'.format(epoch), index=None,header=None)
+            m1.to_csv('new_saved/dgl/ml-GCMC-W-epoch{}.csv'.format(epoch), index=None,header=None)
+            m2.to_csv('new_saved/dgl/ml-GCMC-V-epoch{}.csv'.format(epoch), index=None,header=None)
 
             for i in range(layers):
                 l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
                 l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
-                l1.to_csv('new_saved/ml-GCMCConv-W_r-epoch{}0-layer{}.csv'.format(epoch,i), index=None,header=None)
-                l2.to_csv('new_saved/ml-GCMCConv-W-epoch{}0-layer{}.csv'.format(epoch, i), index=None,header=None)
+                l1.to_csv('new_saved/dgl/ml-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None,header=None)
+                l2.to_csv('new_saved/dgl/ml-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None,header=None)
 
         print(result)
         recommend(item_data_for_recommend, topK , FSLflag)
 
 def run():
     if FSLflag == False:
-        dglMainMovielens(layers=2,batch_size=500,epochs=50,hiddeen_dims=8,topK=10)
+        dglMainMovielens(layers=1,batch_size=500,epochs=50,hiddeen_dims=8,topK=10)
     else:
         # dglMainFSL(layers=1, batch_size=500, epochs=1, hiddeen_dims=8, topK=10)
-        # 前5000的数据量太小，需要降低采样数量，batch_size就先设为5，数据多了再改
-        dglMainFSL(layers=1,batch_size=5,epochs=1,hiddeen_dims=8,topK=10)
+        # 前5000的数据量太小，需要降低采样数量，batch_size就要设置得小一些，例如设为5，数据多了再改
+        dglMainFSL(layers=1,batch_size=500,epochs=50,hiddeen_dims=8,topK=10)
 
