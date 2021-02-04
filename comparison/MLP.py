@@ -274,7 +274,7 @@ else:
 if FSLflag:
     result, userdict, itemdict = MLP(all_data, user_data, item_data,epoch=50,batch_size=32)
 else:
-    MLP(all_data, user_data, item_data, epoch=1, batch_size=32)
+    MLP(all_data, user_data, item_data, epoch=50, batch_size=32)
 
 if FSLflag == False:
 
