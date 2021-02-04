@@ -133,7 +133,7 @@ def save_W(W):
             temp.append(value)
             W_list.append(temp)
     W_df = pd.DataFrame(W_list)
-    W_df.to_csv("../file_saved/item_similarity.csv", header = False, index = False)
+    W_df.to_csv("../new_saved/itemCF/item_similarity.csv", header = False, index = False)
 
 def makeRecommend(train_user_dict, test_user_dict, K):
     print("make recommend")

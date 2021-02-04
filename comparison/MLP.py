@@ -141,7 +141,7 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
                          "MLP_layer2_W%d.csv", "MLP_layer2_b%d.csv", "MLP_layer3_W%d.csv", "MLP_layer3_b%d.csv",
                          "MLP_out_W%d.csv", "MLP_out_b%d.csv"]
             count = 0
-            path_name = "../file_saved/"
+            path_name = "../new_saved/MLP/"
             for p in model.get_weights():
                 file = path_name + file_name[count] % e
                 temp = pd.DataFrame(p)
