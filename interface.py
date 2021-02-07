@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
-import urllib
-from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
+import urllib.request
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import logging
 from OutputFusion.outputFusion import format_result
 
@@ -11,7 +11,7 @@ class ServerHTTP(BaseHTTPRequestHandler):
         logging.warning(u"运行日志：接口GET")
         path = self.path
         # 拆分url(也可根据拆分的url获取Get提交才数据),可以将不同的path和参数加载不同的html页面，或调用不同的方法返回不同的数据，来实现简单的网站或接口
-        query = urllib.splitquery(path)
+        # query = urllib.splitquery(path)
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.send_header("test", "This is test!")
@@ -28,17 +28,20 @@ class ServerHTTP(BaseHTTPRequestHandler):
         </form>
         </body>
         </html>'''
-        self.wfile.write(buf)
+        self.wfile.write(str.encode(buf))
 
     def do_POST(self):
         logging.warning(u"运行日志：接口POST")
         path = self.path
         datas = self.rfile.read(int(self.headers['content-length']))
 
+        temp = {}
+        for i in datas.split(str.encode("&")):
+            (key, value) = i.split(str.encode("="))
+            temp[key] = value;
         result = {}
-        for i in datas.split("&"):
-            (key, value) = i.split("=")
-            result[key] = value;
+        for key, value in temp.items():
+            result[bytes.decode(key)] = bytes.decode(value)
         #results = format_result(int(result["userId"]),int(result["listNumber"]))
         results = format_result(str(result["userId"]),int(result["listNumber"]))
 
@@ -59,7 +62,7 @@ class ServerHTTP(BaseHTTPRequestHandler):
             </head>
             <body>Post Data:%s <br />Path:%s</body>
         </html>'''%(datas, self.path)
-        self.wfile.write(buf)
+        self.wfile.write(str.encode(buf))
 
 def start_server(port):
     http_server = HTTPServer(('', int(port)), ServerHTTP)

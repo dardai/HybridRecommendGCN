@@ -11,10 +11,10 @@ class DatabaseIo:
     def __init__(self):
         self.closeFlag = False
         self.db = MySQLdb.connect(
-            DataBaseInfo["address"],
-            DataBaseInfo["username"],
-            DataBaseInfo["passwd"],
-            DataBaseInfo["basename"],
+            host = DataBaseInfo["address"],
+            user = DataBaseInfo["username"],
+            password = DataBaseInfo["passwd"],
+            database = DataBaseInfo["basename"],
             charset="utf8")
         if self.db:
             self.cursor = self.db.cursor()

@@ -12,8 +12,8 @@ import redis
 pd.set_option('float_format', lambda x: '%.3f' % x)
 import sys
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
 
 # 按值对字典进行降序排序，输出列表结果
 from utils.extends import formatDataByType, makeDic
@@ -85,7 +85,7 @@ def popular_courses():
     result_dataframe = DataFrame(result)
     # result_dataframe.to_csv('popular.csv', index=None, header=None)
     result_dataframe.to_csv('file_saved/popular.csv', index=None, header=None)
-    print result_dataframe
+    # print result_dataframe
     return result
 
 
@@ -211,7 +211,7 @@ def fusion(y):
                 temp_courses[high_score_course[i][0]] = -1
 
         for key in temp_courses:
-            temp = [row[0], key, temp_courses[key]]
+            temp = [row[0], key, float(temp_courses[key])]
             result.append(temp)
     result = sorted(result, key=lambda k: k[2], reverse=True)
     result_dataframe = DataFrame(result)
@@ -377,7 +377,7 @@ def recommend_cache(recommend_list):
         for row in recommend_list:
             con.zadd(row[0], {row[1]: row[2]})
     except Exception as e:
-        print e
+        print(e)
     finally:
         del con
 
@@ -393,7 +393,7 @@ def popular_cache(popular_list):
         for row in popular_list:
             con.set(row[0], row[1])
     except Exception as e:
-        print e
+        print(e)
     finally:
         del con
 
@@ -409,6 +409,6 @@ def highscore_cache(highscore_list):
         for row in highscore_list:
             con.set(row[0], row[1])
     except Exception as e:
-        print e
+        print(e)
     finally:
         del con
