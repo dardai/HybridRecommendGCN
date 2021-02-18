@@ -134,6 +134,21 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
     model.compile(loss="mean_squared_error", optimizer="adam")
     # model.summary()
     train = train.astype('float64')
+
+    u_pre = u_data[0].values.tolist()
+    i_pre = i_data[0].values.tolist()
+    # 列表乘以一个数字x将得到一个新的列表，新列表是原来列表重复x次，如[0]*5 = [0,0,0,0,0]
+    ilen = len(i_pre)
+    ulen = len(u_pre)
+    u_pre = u_pre * ilen
+    i_pre = i_pre * ulen
+
+    pre = pd.DataFrame({'user_id': u_pre, 'item_id': i_pre})
+    if FSLflag:
+        pre['user_id'] = pre['user_id'].map(users)
+        pre['item_id'] = pre['item_id'].map(movies)
+        pre = pre.dropna(subset=['user_id', 'item_id'])
+
     for e in range(1, epoch + 1):
         model.train_on_batch([train.user_id.values, train.item_id.values], train.rating.values)
         if e % 10 == 0:
@@ -147,21 +162,39 @@ def MLP(all_data, u_data, i_data,epoch,batch_size):
                 temp = pd.DataFrame(p)
                 temp.to_csv(file, header=False, index=False)
                 count = count + 1
+            temp_pred = model.predict([pre.user_id.values, pre.item_id.values])
+            pred_file_name = "intermediate_result_%d.csv"
+            result_file = path_name + pred_file_name % e
+            # temp_pred = pd.DataFrame(temp_pred)
+            # temp_pred.to_csv(result_file, header = False, index = False)
+            pre['rating'] = temp_pred
+            result = pre.groupby('user_id').apply(lambda x: x.sort_values(by="rating", ascending=False)).reset_index(
+                drop=True)
+            if FSLflag:
+                # 反向字典，以输出原id
+                users_r = {v: k for k, v in users.items()}
+                items_r = {v: k for k, v in movies.items()}
+                result_fsl = result.copy()
+                result_fsl['user_id'] = result_fsl['user_id'].map(users_r)
+                result_fsl['item_id'] = result_fsl['item_id'].map(items_r)
+                result_fsl.to_csv(result_file, index=None)
+            else:
+                result.to_csv(result_file, index=None)
         # model.fit()
     # model.fit([train.user_id.values, train.item_id.values], train.rating.values, epochs=epoch, batch_size=batch_size, verbose=2, callbacks = [WeightsSaver(10)])
-    u_pre = u_data[0].values.tolist()
-    i_pre = i_data[0].values.tolist()
-    # 列表乘以一个数字x将得到一个新的列表，新列表是原来列表重复x次，如[0]*5 = [0,0,0,0,0]
-    ilen = len(i_pre)
-    ulen = len(u_pre)
-    u_pre = u_pre * ilen
-    i_pre = i_pre * ulen
-
-    pre = pd.DataFrame({'user_id': u_pre, 'item_id': i_pre})
-    if FSLflag:
-        pre['user_id'] = pre['user_id'].map(users)
-        pre['item_id'] = pre['item_id'].map(movies)
-        pre = pre.dropna(subset=['user_id','item_id'])
+    # u_pre = u_data[0].values.tolist()
+    # i_pre = i_data[0].values.tolist()
+    # # 列表乘以一个数字x将得到一个新的列表，新列表是原来列表重复x次，如[0]*5 = [0,0,0,0,0]
+    # ilen = len(i_pre)
+    # ulen = len(u_pre)
+    # u_pre = u_pre * ilen
+    # i_pre = i_pre * ulen
+    #
+    # pre = pd.DataFrame({'user_id': u_pre, 'item_id': i_pre})
+    # if FSLflag:
+    #     pre['user_id'] = pre['user_id'].map(users)
+    #     pre['item_id'] = pre['item_id'].map(movies)
+    #     pre = pre.dropna(subset=['user_id','item_id'])
 
     pred = model.predict([pre.user_id.values, pre.item_id.values])
 
