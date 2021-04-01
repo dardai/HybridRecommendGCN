@@ -55,7 +55,7 @@ DataBaseInfo = {
     "passwd": "ASElab905",
     "basename": "learningrecommend"
 }
-
+ 
 # DataBaseInfo = {
 #     "address": "101.133.194.114",
 #     "username": "train_rs",
@@ -84,4 +84,11 @@ DataBaseQuery = {
     "predeal_insert_course_dr": "insert into course_dr(user_id, course_index, recommend_value) values (%s, %s, %s)",
     "predeal_clean_course_dr": "truncate table course_dr;",
     "dgl_user_info": "select id,sex from account5000",
+    "popular_clean_course": "truncate table popular_course;",
+    "popular_insert_course": "insert into popular_course(course_id, click_times) values (%s, %s)",
+    "popular_select_course": "select course_id,click_times from popular_course ",
+    "highscore_clean_course": "truncate table high_score_course;",
+    "highscore_insert_course": "insert into high_score_course(course_id, score) values (%s, %s)",
+    "highscore_select_course": "select course_id,score from high_score_course "
+
 }

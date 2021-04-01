@@ -4,7 +4,7 @@
 from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, DataBaseQuery
 import pandas as pd
-import logging
+import logging 
 
 #筛选增量数据
 def getChangedData(d):

@@ -71,8 +71,20 @@ def get_all_users():
 # 根据点击次数，计算每个课程的被点击总次数，获取热门课程列表
 def popular_courses():
     logging.warning(u"运行日志：获取热门课程列表")
+
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+
+    sql_clean_popularcourse = DataBaseQuery["popular_clean_course"]
+    #sql_clean_popularcourse = 'truncate table popular_course;'
+
+    sql_insert_popularcourse = DataBaseQuery["popular_insert_course"]
+    #sql_insert_popularcourse = "insert into popular_course(course_id, course_click_times) values (%s, %s)"
+
     courses = get_user_course()
     course_click_times = {}
+    popularCourseList = list()
     for row in courses:
         # if int(row[1]) not in course_click_times:
         #     course_click_times[int(row[1])] = int(row[2])
@@ -82,9 +94,22 @@ def popular_courses():
             # course_click_times[int(row[1])] = course_click_times[int(row[1])] + int(row[2])
             course_click_times[row[1]] = course_click_times[row[1]] + int(row[2])
     result = sort_by_value(course_click_times)
-    result_dataframe = DataFrame(result)
-    # result_dataframe.to_csv('popular.csv', index=None, header=None)
-    result_dataframe.to_csv('file_saved/popular.csv', index=None, header=None)
+    # result_dataframe = DataFrame(result)
+    # print(result_dataframe)
+    for row in result:
+        course_id, click_times = row
+        popularCourseList.append(tuple([course_id, click_times]))
+    
+    insertTuple = tuple(popularCourseList)
+    # print(insertTuple)
+    dbHandle.doSql(DataBaseOperateType.InsertOne, sql_clean_popularcourse)
+    dbHandle.changeCloseFlag()
+    dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_popularcourse,
+                   insertTuple)
+    print("popularcourse success")
+    # result_dataframe = DataFrame(result)
+    # # result_dataframe.to_csv('popular.csv', index=None, header=None)
+    # result_dataframe.to_csv('file_saved/popular.csv', index=None, header=None)
     # print result_dataframe
     return result
 
@@ -92,8 +117,20 @@ def popular_courses():
 # 根据课程评分，计算每个课程的平均评分，获取高评分课程列表
 def high_score_courses():
     logging.warning(u"运行日志：获取高评分课程列表")
+
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+
+    sql_clean_highscorecourse = DataBaseQuery["highscore_clean_course"]
+    #sql_clean_highscorecourse = 'truncate table  high_score_course;'
+
+    sql_insert_highscorecourse = DataBaseQuery["highscore_insert_course"]
+    #sql_insert_highscorecourse = "insert into high_score_course(course_id, score) values (%s, %s)"
+
     courses = get_user_course()
     course_score_sum = {}
+    highscoreCourseList = list()
     for row in courses:
         if int(row[1]) not in course_score_sum:
             # course_score_sum[int(row[1])] = [int(row[3]), 1]
@@ -105,9 +142,21 @@ def high_score_courses():
     for key in course_score_sum:
         course_score[key] = course_score_sum[key][0] / course_score_sum[key][1]
     result = sort_by_value(course_score)
-    result_dataframe = DataFrame(result)
-    # result_dataframe.to_csv('highScore.csv', index=None, header=None)
-    result_dataframe.to_csv('file_saved/highScore.csv', index=None, header=None)
+    # print(result)
+    for row in result:
+        course_id, score = row
+        highscoreCourseList.append(tuple([course_id, score]))
+
+    insertTuple = tuple(highscoreCourseList)
+    dbHandle.doSql(DataBaseOperateType.InsertOne, sql_clean_highscorecourse)
+    dbHandle.changeCloseFlag()
+    dbHandle.doSql(DataBaseOperateType.InsertMany, sql_insert_highscorecourse,
+                   insertTuple)
+
+    print("highscorecourse success")
+    # result_dataframe = DataFrame(result)
+    # # result_dataframe.to_csv('highScore.csv', index=None, header=None)
+    # result_dataframe.to_csv('file_saved/highScore.csv', index=None, header=None)
     return result
 
 
@@ -171,8 +220,29 @@ def get_online_result():
 
 def fusion(y):
     logging.warning(u"运行日志：混合个性化推荐课程、热门课程、高评分课程")
-    popular_course = popular_courses()
-    high_score_course = high_score_courses()
+
+    sql_select_popularcourse = DataBaseQuery["popular_select_course"]
+    # sql_select_popularcourse = '''select course_id,click_times from popular_course
+
+    sql_select_highscorecourse = DataBaseQuery["highscore_select_course"]
+    # sql_select_highscorecourse = "select course_id,score from high_score_course "
+
+    dbHandle = DatabaseIo()
+    if not dbHandle:
+        return None
+
+    popular_course_demo = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                            sql= sql_select_popularcourse)
+    high_score_course_demo = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
+                            sql= sql_select_highscorecourse)
+
+    popular_course = list(popular_course_demo)
+    high_score_course = list(high_score_course_demo)
+    print(popular_course)
+
+    # popular_course = popular_courses()
+    # high_score_course = high_score_courses()
+
     recommend_num = get_course_num(y)
     online_result = get_online_result()
     result = []
@@ -216,8 +286,9 @@ def fusion(y):
     result = sorted(result, key=lambda k: k[2], reverse=True)
     result_dataframe = DataFrame(result)
     # result_dataframe.to_csv('outputFusion.csv', index=None, header=None)
-    result_dataframe.to_csv('file_saved/outputFusion.csv', index=None, header=None)
+    result_dataframe.to_csv('file_saved/outputFusion2.csv', index=None, header=None)
     return result_dataframe, popular_course
+
 
 
 def get_course_name(value, courseList):

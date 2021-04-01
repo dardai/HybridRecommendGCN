@@ -5,7 +5,7 @@ from utils.databaseIo import DatabaseIo
 from globalConst import DataBaseOperateType, DataBaseQuery
 import logging
 
-
+ 
 def updateCourseDr():
     logging.warning(u"运行日志：开始数据预处理")
     print("run coursePredeal...")

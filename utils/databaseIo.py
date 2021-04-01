@@ -33,7 +33,7 @@ class DatabaseIo:
         # logging.warning(u"运行日志：执行数据库sql查询")
         result = None
         sql = formatSql(sql, *params)
-
+ 
         if not sql:
             return result
 
