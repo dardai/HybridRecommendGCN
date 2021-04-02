@@ -238,8 +238,6 @@ def fusion(y):
 
     popular_course = list(popular_course_demo)
     high_score_course = list(high_score_course_demo)
-    print(popular_course)
-
     # popular_course = popular_courses()
     # high_score_course = high_score_courses()
 
@@ -483,3 +481,6 @@ def highscore_cache(highscore_list):
         print(e)
     finally:
         del con
+
+# high_score_courses()
+# popular_courses()
