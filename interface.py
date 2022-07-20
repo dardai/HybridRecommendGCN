@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from OutputFusion.outputFusion import format_result
-
 # -*- coding: UTF-8 -*-
 import os
 import sys
@@ -8,6 +5,7 @@ import json
 from gevent import monkey
 from flask import Flask, request
 from gevent.pywsgi import WSGIServer
+from OutputFusion.outputFusion import format_result
 # from OutputFusion.outputFusion import format_result_with_image
 
 __dir__ = os.path.dirname(os.path.abspath(__file__))

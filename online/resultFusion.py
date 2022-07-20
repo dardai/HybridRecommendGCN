@@ -21,7 +21,7 @@ def fusion():
 
     #找出两个df中uid和cid对相同的行，存到mergeData中
     mergeData = pd.merge(differAllData,changedData,on=['uid','cid'],how='inner')
-    print mergeData
+    # print mergeData
 
     if not mergeData.empty:
         muid = mergeData['uid'].values.tolist()
@@ -75,6 +75,8 @@ def fusion():
 
 
     # baseData = pd.read_csv('../resultToRoc.csv')
+    # 这里需要基于指定csv读取离线推荐结果
+    # 在其基础上更新在线推荐结果
     baseData = pd.read_csv('../file_saved/resultToRoc.csv')
     updatedBaseData = baseData.append(fusionData)
     updatedBaseData.drop_duplicates(subset=['uid','cid'],keep='last',inplace=True)

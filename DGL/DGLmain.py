@@ -1,6 +1,6 @@
 import dgl
 import torch
-from DGL.mlload import get_ml_100k,get_fshl,get_bigraph
+from DGL.mlload import get_ml_100k, get_fshl, get_bigraph
 from torch.utils.data import TensorDataset, DataLoader
 from DGL.minibatch import MinibatchSampler
 from DGL.gcmc import rmse, GCMCRating1, GCMCRating2
@@ -10,7 +10,9 @@ import numpy as np
 
 FSLflag = False
 
-def makeClassifyDict(item_data,FSLflag):
+
+# 计算分类的记录字典
+def makeClassifyDict(item_data, FSLflag):
     print("make classify dict")
     classifydict = {}
     item = item_data
@@ -28,7 +30,9 @@ def makeClassifyDict(item_data,FSLflag):
             continue
     return classifydict
 
-def recommend(item_data,topK,FSLflag,classify_num=0):
+
+# 在计算分类的覆盖情况
+def recommend(item_data, topK, FSLflag, classify_num=0):
     if FSLflag == False:
         result = pd.read_csv('file_saved/ml-DGLresult.csv')
     else:
@@ -37,13 +41,13 @@ def recommend(item_data,topK,FSLflag,classify_num=0):
     # 计算列表覆盖率
     recommend_length = len(result_topK['item_id'].value_counts())
     item_length = len(item_data)
-    cov = recommend_length/item_length
+    cov = recommend_length / item_length
     print("the rate of coverage: ")
     print(cov)
     # 计算物品类别覆盖率
     # 记录推荐类别的字典
     classify_num_dict = {}
-    classify = makeClassifyDict(item_data,FSLflag)
+    classify = makeClassifyDict(item_data, FSLflag)
     if FSLflag:
         item_id = result_topK['item_id'].astype('str').values.tolist()
         classify_id = []
@@ -86,7 +90,6 @@ def dglMainFSL(layers, batch_size, epochs, hiddeen_dims, topK):
 
     classify_id = classify_data['classify_id'].values.tolist()
     classify_num = len(set(classify_id))
-
 
     # 把用户id和项目id的类型换成枚举类
     train_data = train_data.astype({'user_id': 'category', 'item_id': 'category'})
@@ -280,26 +283,33 @@ def dglMainFSL(layers, batch_size, epochs, hiddeen_dims, topK):
             print(result)
 
             result.to_csv('new_saved/dgl/fsl-DGLresult-epoch{}.csv'.format(epoch), index=None)
-            m1 = pd.DataFrame(model.W.weight.tolist())
-            m2 = pd.DataFrame(model.V.weight.tolist())
-            m1.to_csv('new_saved/dgl/fsl-GCMC-W-epoch{}.csv'.format(epoch), index=None)
-            m2.to_csv('new_saved/dgl/fsl-GCMC-V-epoch{}.csv'.format(epoch), index=None)
 
-            for i in range(layers):
-                l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
-                l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
-                l1.to_csv('new_saved/dgl/fsl-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch, i), index=None)
-                l2.to_csv('new_saved/dgl/fsl-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None)
-        recommend(item_data_for_recommend, topK, FSLflag, classify_num=classify_num)
+            # 以下在试图存储模型中的参数，可以注释掉
+            # m1 = pd.DataFrame(model.W.weight.tolist())
+            # m2 = pd.DataFrame(model.V.weight.tolist())
+            # m1.to_csv('new_saved/dgl/fsl-GCMC-W-epoch{}.csv'.format(epoch), index=None)
+            # m2.to_csv('new_saved/dgl/fsl-GCMC-V-epoch{}.csv'.format(epoch), index=None)
+            #
+            # for i in range(layers):
+            #     l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
+            #     l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
+            #     l1.to_csv('new_saved/dgl/fsl-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch, i), index=None)
+            #     l2.to_csv('new_saved/dgl/fsl-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None)
+
+        # 计算分类的覆盖情况，默认注释掉，不用跑
+        # recommend(item_data_for_recommend, topK, FSLflag, classify_num=classify_num)
 
 
-def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
+def dglMainMovielens(layers, batch_size, epochs, hiddeen_dims, topK):
     # 拿到数据
     train_data, test_data, user_data, item_data = get_ml_100k()
 
     # 把用户id和项目id的类别换成枚举类
     train_data = train_data.astype({'user_id': 'category', 'item_id': 'category'})
     test_data = test_data.astype({'user_id': 'category', 'item_id': 'category'})
+
+    # 方便后续计算推荐结果
+    item_data_for_recommend = item_data.copy()
 
     # 训练集和测试集的数据保持一致
     # test_data['user_id'].cat.set_categories(train_data['user_id'].cat.categories, inplace=True)
@@ -309,7 +319,6 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
     train_user_ids = torch.LongTensor(train_data['user_id'].cat.codes.values)
     train_item_ids = torch.LongTensor(train_data['item_id'].cat.codes.values)
     train_ratings = torch.LongTensor(train_data['rating'].values)
-
 
     # 全连接图的建立，准备user的id，item的id，item的id只留训练过的
     all_user_ids = list(set(train_user_ids.tolist()))
@@ -325,14 +334,11 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
     # test_item_ids = torch.LongTensor(test_data['item_id'].cat.codes.values)
     # test_ratings = torch.LongTensor(test_data['rating'].values)
 
-
     # 创建异构图
     graph = dgl.heterograph({
         ('user', 'watched', 'item'): (train_user_ids, train_item_ids),
         ('item', 'watchedby', 'user'): (train_item_ids, train_user_ids)
     })
-
-
 
     # 令训练数据和用户、项目数据一致
     user_data[0] = user_data[0].astype('category')
@@ -369,9 +375,7 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
     graph.nodes['user'].data['gender'] = torch.LongTensor(user_gender)
     # graph.nodes['user'].data['occupation'] = torch.LongTensor(user_occupation)
 
-
     graph.nodes['item'].data['genres'] = torch.FloatTensor(item_genres)
-
 
     # 本来直接用边类型就可以，但是会报错，只好用全称
     graph.edges[('item', 'watchedby', 'user')].data['rating'] = torch.LongTensor(train_ratings)
@@ -382,7 +386,7 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
 
     # 创建用户、项目全连接图
     all_graph = dgl.heterograph({('user', 'watched', 'item'): (all_user_ids, all_item_ids)})
-    #real_data为之后还原id做准备
+    # real_data为之后还原id做准备
     real_data = torch.tensor(list(zip(all_user_ids, all_item_ids)), dtype=torch.int)
     all_graph.edata['real_data'] = real_data
     # ---------------------------------------------从全连接图中去掉历史连接------------------------------------------------
@@ -428,13 +432,13 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
 
     # 创建模型
     model = GCMCRating2(graph.number_of_nodes('user'), graph.number_of_nodes('item'), HIDDEN_DIMS, 5, NUM_LAYERS,
-                       num_user_genders, num_item_genres)
+                        num_user_genders, num_item_genres)
 
     # 使用Adam优化器
     opt = torch.optim.Adam(model.parameters())
 
     # 开始训练
-    epoch  = 0
+    epoch = 0
     for _ in range(NUM_EPOCHS):
         model.train()
         # 加个进度条，直观
@@ -460,9 +464,9 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
             # real_data = torch.cat(real_data, 0)
         model.eval()
 
-
         epoch += 1
-        if epoch % 10 == 0:
+        if epoch + 1 == NUM_EPOCHS:
+            # if epoch % 10 == 0:
             # -----------------------------------------------------------------------------------------------------------
             # ---------------------------------------graph转block---------------------------------------------
             # 创建子图块
@@ -508,31 +512,33 @@ def dglMainMovielens(layers,batch_size,epochs,hiddeen_dims,topK):
             # 按user_id分组排序
             result = result.groupby('user_id').apply(lambda x: x.sort_values(by="rating", ascending=False)).reset_index(
                 drop=True)
-            result.to_csv('file_saved/ml-DGLresult.csv', index=None)
-            #-----------------------------------------------------------------------------------------------------------
-            print(result)
+            # result.to_csv('file_saved/ml-DGLresult.csv', index=None)
+            # -----------------------------------------------------------------------------------------------------------
+            # print(result)
 
             result.to_csv('new_saved/dgl/ml-DGLresult-epoch{}.csv'.format(epoch), index=None)
-            m1 = pd.DataFrame(model.W.weight.tolist())
-            m2 = pd.DataFrame(model.V.weight.tolist())
-            m1.to_csv('new_saved/dgl/ml-GCMC-W-epoch{}.csv'.format(epoch), index=None,header=None)
-            m2.to_csv('new_saved/dgl/ml-GCMC-V-epoch{}.csv'.format(epoch), index=None,header=None)
 
-            for i in range(layers):
-                l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
-                l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
-                l1.to_csv('new_saved/dgl/ml-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None,header=None)
-                l2.to_csv('new_saved/dgl/ml-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None,header=None)
+            # 读取用户与项目的向量并存储
+            # m1 = pd.DataFrame(model.W.weight.tolist())
+            # m2 = pd.DataFrame(model.V.weight.tolist())
+            # m1.to_csv('new_saved/dgl/ml-GCMC-W-epoch{}.csv'.format(epoch), index=None,header=None)
+            # m2.to_csv('new_saved/dgl/ml-GCMC-V-epoch{}.csv'.format(epoch), index=None,header=None)
 
+            # 读取模型的神经网络参数并存储
+            # for i in range(layers):
+            #     l1 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W_r.flatten(1).tolist())
+            #     l2 = pd.DataFrame(model.layers[i].heteroconv.mods['watchedby'].W.weight.tolist())
+            #     l1.to_csv('new_saved/dgl/ml-GCMCConv-W_r-epoch{}-layer{}.csv'.format(epoch,i), index=None,header=None)
+            #     l2.to_csv('new_saved/dgl/ml-GCMCConv-W-epoch{}-layer{}.csv'.format(epoch, i), index=None,header=None)
 
-        recommend(item_data_for_recommend, topK , FSLflag)
+        # recommend(item_data_for_recommend, topK , FSLflag)
+
 
 def run():
     if FSLflag == False:
-        dglMainMovielens(layers=1,batch_size=500,epochs=50,hiddeen_dims=8,topK=10)
+        dglMainMovielens(layers=1, batch_size=500, epochs=50, hiddeen_dims=8, topK=10)
     else:
         # dglMainFSL(layers=1, batch_size=500, epochs=1, hiddeen_dims=8, topK=10)
         # 报错KeyError:'user' 或者 'item'，要修改batch_size
         # 前5000的数据量太小，需要降低采样数量，batch_size就要设置得小一些，例如设为5，数据多了再改
-        dglMainFSL(layers=1,batch_size=5,epochs=50,hiddeen_dims=8,topK=10)
-
+        dglMainFSL(layers=1, batch_size=5, epochs=50, hiddeen_dims=8, topK=10)
