@@ -4,9 +4,10 @@
 # 本代码实现了二部图算法，并用批量存储的方法将产生的推荐结果存入到SQL server数据库中的course_model表中
 import sys
 import os
-project = '\\Desktop\\HybridRecommendGCN'  # 工作项目根目录
-sys.path.append(os.getcwd().split(project)[0] + project)
-import prettytable as pt
+
+# project = '\\Desktop\\HybridRecommendGCN'  # 工作项目根目录
+# sys.path.append(os.getcwd().split(project)[0] + project)
+# import prettytable as pt
 from decimal import Decimal
 # from sklearn.metrics import roc_curve, auc
 import pandas as pd
@@ -16,14 +17,15 @@ import codecs
 from globalConst import DataBaseOperateType, SetType, DataBaseQuery
 from utils.extends import formatDataByType, makeDic
 from utils.databaseIo import DatabaseIo
-from roc.rocUtils import saveBgInputMartix,rocLocate
+from roc.rocUtils import saveBgInputMartix, rocLocate
 from bgUtils import storeDataAsGCNInput
 import logging
 import scipy.sparse as sp
 
 # 定义将多条数据存入数据库操作
 drawRoc = False
-getGcnInput = True
+
+
 # 输入：由pysaprk中的行矩阵rdd转换成的列表，形如
 # [ DenseMatrix[1,1,1], DenseMatrix[1,1,1], DenseMatrix[1,1,1] ]
 # 返回：转换成功的列表，形如[ [1,1,1], [1,1,1], [1,1,1] ]
@@ -68,10 +70,10 @@ def getDataFromDB():
 
     # sql_dr = """SELECT * FROM course_dr5000"""
     sql_dr = DataBaseQuery["course_dr"]
-    #sql_course = "select id , system_course_id ,course_name from course_info"
+    # sql_course = "select id , system_course_id ,course_name from course_info"
     # sql_course = """select id, name from course5000"""
     sql_course = DataBaseQuery["course_info"]
-    #sql_user = """select user_id from user_basic_info"""
+    # sql_user = """select user_id from user_basic_info"""
     # sql_user = """select id from account5000"""
     sql_user = DataBaseQuery["user_id"]
 
@@ -82,7 +84,6 @@ def getDataFromDB():
     dbHandle.changeCloseFlag()
     result_user = dbHandle.doSql(execType=DataBaseOperateType.SearchMany,
                                  sql=sql_user)
-
 
     print("len(result_dr) = {}, len(result_user) = {},\
           len(result_course) = {}".format(len(result_dr),
@@ -97,7 +98,7 @@ def get_keys(value, courseList):
     # logging.warning(u"运行日志：根据索引读取课程的名字")
     for row in courseList:
         if row[0] == value:
-            #return row[2]
+            # return row[2]
             return row[1]
 
 
@@ -119,7 +120,7 @@ def dataPreprocessiong():
     result, learned = [], []
     for dr in drList:
         temp_result, temp_learned = [], []
-        #print dr[0]
+        # print dr[0]
         temp_result.append(user_mdic[dr[0]] + 1)
         temp_result.append(dr[1])
         temp_result.append(dr[2] * 5)
@@ -132,7 +133,7 @@ def dataPreprocessiong():
     data = pd.DataFrame(result)
 
     if drawRoc:
-        saveBgInputMartix(data,user_mdicr)
+        saveBgInputMartix(data, user_mdicr)
 
     return data, learned, course_mdic, course_mdicr, user_mdic, user_mdicr, \
            dr_length, course_length, user_length, courseList
@@ -149,7 +150,7 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
     test_graph = sp.lil_matrix((course_length, user_length))  # 创建测试图压缩矩阵
     train_rated_graph = sp.lil_matrix((course_length, user_length))  # 创建训练集里已评价压缩矩阵
     testIDs = random.sample(range(1, dr_length), int(dr_length / 10))
-    #如果需要得到可以输入gcn的数据，就不切分数据集
+    # 如果需要得到可以输入gcn的数据，就不切分数据集
     if getGcnInput:
         for index, row in data.iterrows():
             test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
@@ -165,15 +166,15 @@ def makeTrainMatrix(data, course_length, user_length, dr_length, course_mdic):
             if ((index + 1) in testIDs):
                 test_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                 all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-                #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
-                #if (int(row[2]) >= 3.0):
+                # train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
+                # if (int(row[2]) >= 3.0):
                 #    train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
             else:
                 train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                 all_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
                 if (int(row[2]) >= 3.0):
-                    #train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
+                    # train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1.5
                     train_rated_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
                     train_graph[course_mdic[row[1]], int(row[0]) - 1] = 1
 
@@ -196,7 +197,7 @@ def doBigraph():
         makeTrainMatrix(data, course_length, user_length,
                         dr_length, course_mdic)
     if drawRoc:
-        rocLocate(data,course_length,user_length,dr_length,course_mdic)
+        rocLocate(data, course_length, user_length, dr_length, course_mdic)
     # 为资源配置矩阵做准备
     kjs = nm.zeros([course_length])
     kls = nm.zeros([user_length])
@@ -321,70 +322,73 @@ def storeData(recommend_result):
     myfile.close()
 
 
+# 是否将二部图处理结果存入file_saved/toGcn.csv
+getGcnInput = True
+
 def bigraphMain():
     logging.warning(u"运行日志：进行二部图运算")
     print("run bigraph...")
-    locate, recommend_result, learned, \
-    user_length, ls, test_graph = doBigraph()
-    storeData(recommend_result)
-    #转换为GCN可输入的数据
+    _, recommend_result, _, _, _, _ = doBigraph()
+    # 将结果存入txt，没啥用
+    # storeData(recommend_result)
+    # 转换为GCN可输入的数据，存入file_saved/toGcn.csv
     if getGcnInput:
         storeDataAsGCNInput(recommend_result)
 
-    result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])
-    result_data = sorted(result_data, key=lambda x: x[3], reverse=True)
-    # 将产生的推荐结果以id, course_index, recommend_value存入数据库中的course_model表中
-    # insertData(tuple2)
-    # 开始求预测的准确性
-    # rs = nm.zeros(user_length)  # ?? 有什么用
+    # 后续步骤尝试计算基于二部图的推荐结果输出，一般没啥用
+    # result_data = sorted(recommend_result, key=lambda x: x[0] and x[1])
+    # result_data = sorted(result_data, key=lambda x: x[3], reverse=True)
+    # # 将产生的推荐结果以id, course_index, recommend_value存入数据库中的course_model表中
+    # # insertData(tuple2)
+    # # 开始求预测的准确性
+    # # rs = nm.zeros(user_length)  # ?? 有什么用
+    #
+    # # 求测试集中电影的排名矩阵
+    #
+    # # 得到资源配置矩阵对应的排名
+    # indiceLocate = nm.argsort(locate, axis=0)
+    # indiceLocate = sp.csr_matrix(indiceLocate)
+    #
+    # # 通过矩阵对应元素相乘得到测试集的排名数据
+    # # 为方便后续处理，对结果进行转置
+    # # testIndice = (indiceLocate * test_graph).T
+    # testIndice = indiceLocate.multiply(test_graph)
+    # testIndice = sp.csr_matrix(testIndice).transpose().toarray()
+    # # 求精确度的值
+    # usum = 0
+    # # 计算测试集中每部已评分电影的距离，并求均值
+    # for i in range(user_length):
+    #     if (test_graph[:, i].sum() > 0):
+    #         usum += ((testIndice[i]).sum() / (ls[i] * test_graph[:, i].sum()))
+    # #print("the average value of r is:")
+    # #print(usum / user_length)
+    # print("bigraph success")
+    #
+    # return learned, result_data, test_graph
 
-    # 求测试集中电影的排名矩阵
-
-    # 得到资源配置矩阵对应的排名
-    indiceLocate = nm.argsort(locate, axis=0)
-    indiceLocate = sp.csr_matrix(indiceLocate)
-
-    # 通过矩阵对应元素相乘得到测试集的排名数据
-    # 为方便后续处理，对结果进行转置
-    # testIndice = (indiceLocate * test_graph).T
-    testIndice = indiceLocate.multiply(test_graph)
-    testIndice = sp.csr_matrix(testIndice).transpose().toarray()
-    # 求精确度的值
-    usum = 0
-    # 计算测试集中每部已评分电影的距离，并求均值
-    for i in range(user_length):
-        if (test_graph[:, i].sum() > 0):
-            usum += ((testIndice[i]).sum() / (ls[i] * test_graph[:, i].sum()))
-    #print("the average value of r is:")
-    #print(usum / user_length)
-    print("bigraph success")
-
-    return learned, result_data, test_graph
-
-
-def Main():
-    logging.warning(u"运行日志：对二部图推荐结果进行循环id查询展示")
-    learned, result_data, test_graph = bigraphMain()
-    while True:
-        user_id = input("请输入用户id：")
-        if user_id == "quit":
-            break
-        else:
-            ta = pt.PrettyTable()
-            ta.field_names = ["User_id", "Course_id", "Course_name"]
-            for row in learned:
-                if row[0] == int(user_id):
-                    ta.add_row(row)
-            print("该用户已学习过的课程有：")
-            print(ta)
-            tb = pt.PrettyTable()
-            tb.field_names = ["User_id", "Course_id", "Course_name",
-                              "Recommend_value"]
-            for row in result_data:
-                if row[0] == int(user_id):
-                    tb.add_row(row)
-            print("为该用户推荐学习的课程有：")
-            print(tb)
+# def Main():
+#     logging.warning(u"运行日志：对二部图推荐结果进行循环id查询展示")
+#     learned, result_data, test_graph = bigraphMain()
+#     while True:
+#         user_id = input("请输入用户id：")
+#         if user_id == "quit":
+#             break
+#         else:
+#             ta = pt.PrettyTable()
+#             ta.field_names = ["User_id", "Course_id", "Course_name"]
+#             for row in learned:
+#                 if row[0] == int(user_id):
+#                     ta.add_row(row)
+#             print("该用户已学习过的课程有：")
+#             print(ta)
+#             tb = pt.PrettyTable()
+#             tb.field_names = ["User_id", "Course_id", "Course_name",
+#                               "Recommend_value"]
+#             for row in result_data:
+#                 if row[0] == int(user_id):
+#                     tb.add_row(row)
+#             print("为该用户推荐学习的课程有：")
+#             print(tb)
 
 
 # bigraphMain()
